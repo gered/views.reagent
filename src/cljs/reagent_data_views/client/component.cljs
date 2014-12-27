@@ -54,8 +54,10 @@
          any other clients currently subscribed to this view."
   [view-name]
   (assert (not (nil? (r/current-component))))
-  (let [view-sigs (->> (r/current-component) (r/state) :view-sigs)
-        match     (get-views-by-name view-name view-sigs)]
-    (if (> (count match) 1)
-      (throw (str "More then one view signature by the name \"" view-name "\" found."))
-      (views/view-sig-cursor (first match)))))
+  (let [view-sigs   (->> (r/current-component) (r/state) :view-sigs)
+        match       (get-views-by-name view-name view-sigs)
+        num-matches (count match)]
+    (case num-matches
+      1 (views/view-sig-cursor (first match))
+      0 (throw (str "No matching view signature by the name \"" view-name "\"."))
+      (throw (str "More then one view signature by the name \"" view-name "\" found.")))))

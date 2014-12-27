@@ -1,7 +1,8 @@
 (ns reagent-data-views.client.core
   (:require
     [reagent.core :as r]
-    [clj-browserchannel-messaging.client :as browserchannel]))
+    [clj-browserchannel-messaging.client :as browserchannel]
+    [reagent-data-views.client.utils :refer [diff]]))
 
 ;; IMPORTANT NOTE:
 ;; We are using Reagent's built-in RCursor instead of the one provided by reagent-cursor
@@ -14,59 +15,22 @@
 
 (defonce view-data (r/atom {}))
 
-; return items in b that don't exist in a
-(defn- diff [a b]
-  (vec
-    (reduce
-      (fn [item-a item-b]
-        (remove #(= % item-b) item-a))
-      a b)))
+(defn view-sig-cursor
+  "Returns a Reagent cursor that can be used to access the data for the view
+   corresponding with the view-sig.
 
-(declare update-subscriptions!)
+   Generally, for code in a component's render function, you should use
+   reagent-data-views.client.component/view-cursor instead of using this
+   function directly.
 
-(defn update-view-component-sigs
-  "Not intended to be used outside of the def-view-component macro's
-   internal functionality."
-  [owner view-sig-gen-fn view-sigs-atom]
-  (let [new-args (rest (r/argv owner))
-        old-sigs @view-sigs-atom
-        new-sigs (apply view-sig-gen-fn new-args)]
-    (when (not= old-sigs new-sigs)
-      (let [sigs-to-sub   (diff new-sigs old-sigs)
-            sigs-to-unsub (diff old-sigs new-sigs)]
-        (update-subscriptions! sigs-to-sub sigs-to-unsub)
-        (if (not= old-sigs new-sigs)
-          (reset! view-sigs-atom new-sigs))))))
-
-(defn get-view-sig-cursor
-  "Returns a Reagent cursor that can be used to access the data for this view.
-   NOTE: This is intended to be used in a read-only manner. Using this cursor
-         to change the data will *not* propagate to the server or any other
-         clients currently subscribed to this view."
+   NOTE: This function is intended to be used in a read-only manner. Using
+         this cursor to change the data will *not* propagate to the server or
+         any other clients currently subscribed to this view."
   [view-sig]
   (r/cursor [view-sig] view-data))
 
-(defn- get-views-by-name [view-name]
-  (filter
-    (fn [[view-sig _]]
-      (= view-name (first view-sig)))
-    @view-data))
-
-(defn get-view-cursor
-  "Returns a Reagent cursor that can be used to access the data for the view-sig
-   with the specified name. If there is currently multiple subscriptions to views
-   with the same name (but different arguments), this will throw an error.
-   NOTE: This is intended to be used in a read-only manner. Using this cursor
-         to change the data will *not* propagate to the server or any other
-         clients currently subscribed to this view."
-  [view-name]
-  (let [view-sig (get-views-by-name view-name)]
-    (if (> (count view-sig) 1)
-      (throw (str "More then one view signature by the name \"" view-name "\" found."))
-      (get-view-sig-cursor (ffirst view-sig)))))
-
 (defn- add-initial-view-data! [view-sig data]
-  (let [cursor (get-view-sig-cursor view-sig)]
+  (let [cursor (view-sig-cursor view-sig)]
     (reset! cursor data)))
 
 (defn- remove-view-data! [view-sig]
@@ -83,7 +47,7 @@
   (concat existing-data insert-deltas))
 
 (defn- apply-deltas! [view-sig deltas]
-  (let [cursor (get-view-sig-cursor view-sig)]
+  (let [cursor (view-sig-cursor view-sig)]
     (doseq [{:keys [refresh-set insert-deltas delete-deltas]} deltas]
       (if refresh-set         (reset! cursor refresh-set))
       (if (seq delete-deltas) (swap! cursor apply-delete-deltas delete-deltas))

@@ -1,23 +1,25 @@
 (ns reagent-data-views.client.component)
 
-(defmacro def-views-component
+(defmacro defvc
   [component-name args view-sigs & body]
   `(defn ~component-name ~args
-     (let [gen-view-sigs#  (fn ~args ~view-sigs)
-           view-sigs-atom# (atom nil)]
+     (let [gen-view-sigs#         (fn ~args ~view-sigs)
+           get-current-view-sigs# (fn [this#]
+                                    (apply gen-view-sigs# (rest (reagent.core/argv this#))))]
        (reagent.core/create-class
          {:component-will-mount
           (fn [this#]
-            (reset! view-sigs-atom# (apply gen-view-sigs# (rest (reagent.core/argv this#))))
-            (reagent-data-views.client.core/subscribe! (deref view-sigs-atom#)))
+            (let [current-view-sigs# (get-current-view-sigs# this#)]
+              (reagent-data-views.client.component/subscribe! this# current-view-sigs#)))
 
           :component-will-unmount
           (fn [this#]
-            (reagent-data-views.client.core/unsubscribe! (deref view-sigs-atom#)))
+            (reagent-data-views.client.component/unsubscribe-all! this#))
 
           :component-did-update
           (fn [this# old-argv#]
-            (reagent-data-views.client.core/update-view-component-sigs this# gen-view-sigs# view-sigs-atom#))
+            (let [new-view-sigs# (get-current-view-sigs# this#)]
+              (reagent-data-views.client.component/update-subscriptions! this# new-view-sigs#)))
 
           :component-function
           (fn ~args

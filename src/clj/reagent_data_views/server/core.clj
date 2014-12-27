@@ -49,7 +49,7 @@
    * subscriber-key
    Optional. A function applied against incoming BrowserChannel subscription messages
    that is used to get the client-id from the message. If not used, the default is
-   :browserchannel-session-id.
+   :client-id.
 
    * templates
    Map of views used by this application. Keys are the view names and the values are maps
@@ -82,7 +82,7 @@
   ([db templates & {:keys [persistence send-fn subscriber-key]}]
     (let [persistence    (or persistence (new-memory-persistence))
           send-fn        (or send-fn send-deltas)
-          subscriber-key (or subscriber-key :browserchannel-session-id)]
+          subscriber-key (or subscriber-key :client-id)]
       (init! (-> {:db                db
                   :subscriber-key-fn subscriber-key
                   :templates         templates
@@ -102,7 +102,7 @@
   ^{:doc "Middleware for use with clj-browserchannel-messaging that performs important housekeeping operations."}
   views-middleware
   {:on-close (fn [handler]
-               (fn [browserchannel-session-id request reason]
+               (fn [client-id request reason]
                  ; views.router is notified of session disconnects when messages of this type
                  ; are received on the channel passed to views.router/init!. we simply
                  ; inject a disconnect message on this channel when the browserchannel session
@@ -110,8 +110,8 @@
                  (put! browserchannel/incoming-messages
                        (-> {:topic :client-channel
                             :body  :disconnect}
-                           (assoc (:subscriber-key @views-config) browserchannel-session-id)))
-                 (handler browserchannel-session-id request reason)))})
+                           (assoc (:subscriber-key @views-config) client-id)))
+                 (handler client-id request reason)))})
 
 (defn get-subscribed-views
   "Returns information about the views that are currently subscribed to by clients."

@@ -27,7 +27,17 @@
          this cursor to change the data will *not* propagate to the server or
          any other clients currently subscribed to this view."
   [view-sig]
-  (r/cursor [view-sig] view-data))
+  (r/cursor [view-sig :data] view-data))
+
+(defn- inc-view-sig-refcount! [view-sig]
+  (let [path [view-sig :refcount]]
+    (swap! view-data update-in path #(if % (inc %) 1))
+    (get-in @view-data path)))
+
+(defn- dec-view-sig-refcount! [view-sig]
+  (let [path [view-sig :refcount]]
+    (swap! view-data update-in path #(if % (dec %) 0))
+    (get-in @view-data path)))
 
 (defn- add-initial-view-data! [view-sig data]
   (let [cursor (view-sig-cursor view-sig)]
@@ -68,8 +78,10 @@
    the server is cleared."
   [view-sigs]
   (doseq [view-sig view-sigs]
-    (remove-view-data! view-sig)
-    (browserchannel/send :views.unsubscribe [view-sig])))
+    (let [refcount (dec-view-sig-refcount! view-sig)]
+      (when (<= refcount 0)
+        (remove-view-data! view-sig)
+        (browserchannel/send :views.unsubscribe [view-sig])))))
 
 (defn subscribe!
   "Subscribes to the specified view(s). Updates to the data on the server will
@@ -77,8 +89,10 @@
    render it in any component(s)."
   [view-sigs]
   (doseq [view-sig view-sigs]
-    (add-initial-view-data! view-sig nil)
-    (browserchannel/send :views.subscribe [view-sig])))
+    (let [refcount (inc-view-sig-refcount! view-sig)]
+      (when (= refcount 1)
+        (add-initial-view-data! view-sig nil)
+        (browserchannel/send :views.subscribe [view-sig])))))
 
 (defn update-subscriptions!
   "Unsubscribes from old-view-sigs and then subscribes to new-view-sigs. This

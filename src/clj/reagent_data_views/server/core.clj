@@ -6,7 +6,7 @@
     [views.persistence.core :refer [subscriptions]]
     [views.persistence.memory :refer [new-memory-persistence]]
     [views.router :as vr]
-    [views.subscribed-views :refer [subscribed-views]]))
+    [views.subscribed-views :refer [subscribed-views persistence]]))
 
 (defonce
   ^{:doc "The Views configuration. Used with functions like vexec!, etc."}
@@ -95,7 +95,6 @@
                  ; present (even though we passed them in).
                  ; this is not necessarily desirable behaviour for certain advanced
                  ; configurations!
-                 (assoc :persistence persistence)
                  (assoc :namespace :default-ns)
                  (assoc :subscriber-key-fn subscriber-key))))))
 
@@ -125,6 +124,7 @@
   "Returns a set of subscriber-keys representing clients subscribed to the views
    identified by the list of view signatures specified."
   [view-sigs]
-  (let [persistence (:persistence @views-config)
+  (let [bsv         (:base-subscribed-views @views-config)
+        persistence (persistence bsv)
         namespace   (or (:namespace @views-config) :default-ns)]
     (subscriptions persistence namespace view-sigs)))

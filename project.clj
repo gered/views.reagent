@@ -9,7 +9,7 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [reagent "0.5.0-alpha" :scope "provided"]
                  [clj-browserchannel-messaging "0.0.2"]
-                 [views "0.4.9"]]
+                 [views "0.5.0"]]
 
   :source-paths   ["src/clj"]
   :resource-paths ["src/cljs"])

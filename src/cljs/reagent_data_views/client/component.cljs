@@ -1,63 +1,62 @@
 (ns reagent-data-views.client.component
   (:require
+    [clojure.set :refer [difference]]
     [reagent.core :as r]
     [reagent.impl.util :refer [reagent-component?]]
     [reagent-data-views.client.core :as views]
-    [reagent-data-views.client.utils :refer [diff update-component-state!]]))
-
-(defn subscribe!
-  "Subscribes a component to the given view-sigs.
-   NOTE: this function is only intended to be used internally by defvc."
-  [this view-sigs]
-  (assert (reagent-component? this))
-  (r/set-state this {:view-sigs view-sigs})
-  (views/subscribe! view-sigs))
+    [reagent-data-views.client.utils :refer [update-component-state!]]))
 
 (defn unsubscribe-all!
   "Unsubscribes a component from all it's current view subscriptions.
    NOTE: this function is only intended to be used internally by defvc."
   [this]
   (assert (reagent-component? this))
-  (when-let [view-sigs (:view-sigs (r/state this))]
-    (update-component-state! this #(dissoc % :view-sigs))
-    (views/unsubscribe! view-sigs)))
+  (let [last-used-view-sigs (:last-used-view-sigs (r/state this))]
+    (views/unsubscribe! last-used-view-sigs)
+    (update-component-state! this #(dissoc % :used-view-sigs :last-used-view-sigs))))
+
+(defn prepare-for-render!
+  "Prepares the used-view/last-used-view sigs state for the upcoming
+   component render.
+   NOTE: this function is only intended to be used internally by defvc."
+  [this]
+  (assert (reagent-component? this))
+  (let [{:keys [used-view-sigs]} (r/state this)]
+    (r/set-state this {:used-view-sigs      #{}
+                       :last-used-view-sigs (or used-view-sigs #{})})))
 
 (defn update-subscriptions!
-  "Updates a component's view subscriptions to match the new full list
-   of view-sigs. Only changed view-sigs will cause a view subscription
-   change to occur.
+  "Updates view subscriptions by checking what view-sigs were passed to
+   any view-cursor calls during the most recent render and comparing
+   against the view-sigs that were used during the previous render.
+   Automatically subscribes to new view-sigs and unsubscribes from old
+   ones only as is needed.
    NOTE: this function is only intended to be used internally by defvc."
-  [this new-view-sigs]
+  [this]
   (assert (reagent-component? this))
-  (let [current-view-sigs (:view-sigs (r/state this))]
-    (when (not= current-view-sigs new-view-sigs)
-      (let [sigs-to-sub (diff new-view-sigs current-view-sigs)
-            sigs-to-unsub (diff current-view-sigs new-view-sigs)]
-        (update-component-state! this #(assoc % :view-sigs new-view-sigs))
-        (views/update-subscriptions! sigs-to-sub sigs-to-unsub)))))
-
-(defn- get-views-by-name [view-name view-sigs]
-  (filter #(= view-name (first %)) view-sigs))
+  (let [{:keys [used-view-sigs last-used-view-sigs]} (r/state this)]
+    (if (not= used-view-sigs last-used-view-sigs)
+      (let [sigs-to-unsub (vec (difference last-used-view-sigs used-view-sigs))
+            sigs-to-sub   (vec (difference used-view-sigs last-used-view-sigs))]
+        (views/update-subscriptions! sigs-to-sub sigs-to-unsub)
+        (r/set-state this {:used-view-sigs      #{}
+                           :last-used-view-sigs used-view-sigs})))))
 
 (defn view-cursor
-  "Returns a Reagent cursor that can be used to access the data for a view by
-   looking up the corresponding view-sig by name in the current component's
-   list of view subscriptions.
+  "Returns a Reagent cursor that can be used to access the data for a view.
+   If the view-sig is not currently subscribed to, the subscription will be
+   added automatically by the containing component, but this function will
+   return a cursor pointing to nil data until the server sends the initial
+   data for the new subscription (at which point a re-render is triggered).
 
-   This function can only be used within the component's render function.
+   This function can only be used with the render function of a component
+   defined using defvc.
 
-   If there are currently multiple subscriptions to views with the same name
-   (using different arguments) an error is thrown.
-
-   NOTE: This function is intended to be used in a read-only manner. Using
-         this cursor to change the data will *not* propagate to the server or
-         any other clients currently subscribed to this view."
-  [view-name]
-  (assert (not (nil? (r/current-component))))
-  (let [view-sigs   (->> (r/current-component) (r/state) :view-sigs)
-        match       (get-views-by-name view-name view-sigs)
-        num-matches (count match)]
-    (case num-matches
-      1 (views/view-sig-cursor (first match))
-      0 (throw (str "No matching view signature by the name \"" view-name "\"."))
-      (throw (str "More then one view signature by the name \"" view-name "\" found.")))))
+   NOTE: The data returned by this function is intended to be used in a
+         read-only manner. Using this cursor to change the data will *not*
+         propagate the changes to the server."
+  [view-sig]
+  (let [this (r/current-component)]
+    (assert (not (nil? this)) "view-cursor can only be used within a defvc component's render function.")
+    (update-component-state! this #(update-in % [:used-view-sigs] conj view-sig))
+    (views/->view-sig-cursor view-sig)))

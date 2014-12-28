@@ -1,26 +1,42 @@
 (ns reagent-data-views.client.component)
 
 (defmacro defvc
-  [component-name args view-sigs & body]
-  `(defn ~component-name ~args
-     (let [gen-view-sigs#         (fn ~args ~view-sigs)
-           get-current-view-sigs# (fn [this#]
-                                    (apply gen-view-sigs# (rest (reagent.core/argv this#))))]
-       (reagent.core/create-class
-         {:component-will-mount
-          (fn [this#]
-            (let [current-view-sigs# (get-current-view-sigs# this#)]
-              (reagent-data-views.client.component/subscribe! this# current-view-sigs#)))
+  "Defines a Reagent component that works the same as any other defined
+   using defn with the addition that view-cursor can be used in the
+   render function of these components to access data from subscribed
+   views.
 
-          :component-will-unmount
-          (fn [this#]
-            (reagent-data-views.client.component/unsubscribe-all! this#))
+   To subscribe to a view, simply call view-cursor with the signature of
+   the view you want to subscribe to and read data from. view-cursor and
+   components defined with defvc will automatically manage subscribing
+   and unsubscribing to views as the view signatures passed to any
+   view-cursor calls change across the lifetime of this component."
+  [component-name args & body]
+  `(defn ~component-name []
+     (reagent.core/create-class
+       {:component-will-mount
+        (fn [this#]
+          (reagent-data-views.client.component/prepare-for-render! this#))
 
-          :component-did-update
-          (fn [this# old-argv#]
-            (let [new-view-sigs# (get-current-view-sigs# this#)]
-              (reagent-data-views.client.component/update-subscriptions! this# new-view-sigs#)))
+        :component-did-mount
+        (fn [this#]
+          ; invoked immediately after the initial render has occurred.
+          ; we do this here because component-did-mount does not get called
+          ; after the initial render, but will be after all subsequent renders.
+          (reagent-data-views.client.component/update-subscriptions! this#))
 
-          :component-function
-          (fn ~args
-            ~@body)}))))
+        :component-will-unmount
+        (fn [this#]
+          (reagent-data-views.client.component/unsubscribe-all! this#))
+
+        :component-will-receive-props
+        (fn [this# new-argv#]
+          (reagent-data-views.client.component/prepare-for-render! this#))
+
+        :component-did-update
+        (fn [this# old-argv#]
+          (reagent-data-views.client.component/update-subscriptions! this#))
+
+        :component-function
+        (fn ~args
+          ~@body)})))

@@ -1,8 +1,7 @@
 (ns reagent-data-views.client.core
   (:require
     [reagent.core :as r]
-    [clj-browserchannel-messaging.client :as browserchannel]
-    [reagent-data-views.client.utils :refer [diff]]))
+    [clj-browserchannel-messaging.client :as browserchannel]))
 
 ;; IMPORTANT NOTE:
 ;; We are using Reagent's built-in RCursor instead of the one provided by reagent-cursor
@@ -15,17 +14,18 @@
 
 (defonce view-data (r/atom {}))
 
-(defn view-sig-cursor
-  "Returns a Reagent cursor that can be used to access the data for the view
-   corresponding with the view-sig.
+(defn ->view-sig-cursor
+  "Creates and returns a Reagent cursor that can be used to access the data
+   for the view corresponding with the view-sig.
 
    Generally, for code in a component's render function, you should use
    reagent-data-views.client.component/view-cursor instead of using this
-   function directly.
+   function directly. Use of this function instead requires you to manage
+   view subscription/unsubscription yourself.
 
-   NOTE: This function is intended to be used in a read-only manner. Using
-         this cursor to change the data will *not* propagate to the server or
-         any other clients currently subscribed to this view."
+   NOTE: The data returned by this function is intended to be used in a
+         read-only manner. Using this cursor to change the data will *not*
+         propagate the changes to the server."
   [view-sig]
   (r/cursor [view-sig :data] view-data))
 
@@ -40,7 +40,7 @@
     (get-in @view-data path)))
 
 (defn- add-initial-view-data! [view-sig data]
-  (let [cursor (view-sig-cursor view-sig)]
+  (let [cursor (->view-sig-cursor view-sig)]
     (reset! cursor data)))
 
 (defn- remove-view-data! [view-sig]
@@ -57,7 +57,7 @@
   (concat existing-data insert-deltas))
 
 (defn- apply-deltas! [view-sig deltas]
-  (let [cursor (view-sig-cursor view-sig)]
+  (let [cursor (->view-sig-cursor view-sig)]
     (doseq [{:keys [refresh-set insert-deltas delete-deltas]} deltas]
       (if refresh-set         (reset! cursor refresh-set))
       (if (seq delete-deltas) (swap! cursor apply-delete-deltas delete-deltas))
@@ -85,7 +85,7 @@
 
 (defn subscribe!
   "Subscribes to the specified view(s). Updates to the data on the server will
-   be automatically pushed out. Use get-data-cursor to read this data and
+   be automatically pushed out. Use a 'view cursor' to read this data and
    render it in any component(s)."
   [view-sigs]
   (doseq [view-sig view-sigs]

@@ -115,7 +115,8 @@
       (run-jetty-async
         {:port         8080
          :auto-reload? true
-         :join?        false})))
+         :join?        false}))
+  (println "Web app is running at http://localhost:8080/"))
 
 (defn -main [& args]
   (run-server))

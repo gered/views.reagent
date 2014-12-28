@@ -110,7 +110,7 @@
                  (put! browserchannel/incoming-messages
                        (-> {:topic :client-channel
                             :body  :disconnect}
-                           (assoc (:subscriber-key @views-config) client-id)))
+                           (assoc (:subscriber-key-fn @views-config) client-id)))
                  (handler client-id request reason)))})
 
 (defn get-subscribed-views

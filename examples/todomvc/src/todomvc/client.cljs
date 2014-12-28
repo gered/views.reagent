@@ -64,10 +64,9 @@
                      :on-stop #(reset! editing false)}])])))
 
 (defvc todo-app [props]
-  [[:todos]]
   (let [filt (atom :all)]
     (fn []
-      (let [items (view-cursor :todos)
+      (let [items (view-cursor [:todos])
             done (->> @items (filter :done) count)
             active (- (count @items) done)]
         [:div

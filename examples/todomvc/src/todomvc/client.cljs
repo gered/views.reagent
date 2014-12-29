@@ -98,7 +98,7 @@
 
 (defn ^:export run []
   (browserchannel/init!
-    :callback
+    :on-connect
     (fn []
       (rviews/init!)
       (reagent/render-component [todo-app] (.-body js/document)))))

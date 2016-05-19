@@ -89,6 +89,16 @@
   (unsubscribe! old-view-sigs)
   (subscribe! new-view-sigs))
 
+(defn on-open!
+  []
+  (if (seq @view-data)
+    ; if there are existing subscriptions right when the messaging system connects
+    ; to the server, then it means that this was probably a reconnection.
+    ; the server removes subscriptions when a client disconnects, so we should
+    ; send subscriptions for all of the views that were left in view-data
+    (doseq [view-sig (keys @view-data)]
+      (send-data! [:views/subscribe view-sig]))))
+
 (defn on-receive!
   [data]
   (when (relevant-event? data)

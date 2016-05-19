@@ -1,18 +1,17 @@
 (ns reagent-data-views.client.core
   (:require
     [reagent.core :as r]
-    [clj-browserchannel-messaging.client :as browserchannel]))
-
-;; IMPORTANT NOTE:
-;; We are using Reagent's built-in RCursor instead of the one provided by reagent-cursor
-;; because as of reagent 0.5.0 there is added performance improvements to protect
-;; against extra rerenders when deref'ing cursors.
-;; This is very important for us here as we store all view subscription data in a single
-;; Reagent atom and use cursors keyed by view-sig to access the data. With reagent 0.5.0
-;; cursors, Component A deref'ing view-sig X will not rerender when Component B
-;; deref'ing view-sig Y receives updated data.
+    [reagent-data-views.utils :refer [relevant-event?]]))
 
 (defonce view-data (r/atom {}))
+
+(defonce send-fn (atom nil))
+
+(defn send-data!
+  [data]
+  (if-not @send-fn
+    (throw (js/Error. "send-fn not set"))
+    (@send-fn data)))
 
 (defn ->view-sig-cursor
   "Creates and returns a Reagent cursor that can be used to access the data
@@ -29,48 +28,23 @@
   [view-sig]
   (r/cursor [view-sig :data] view-data))
 
-(defn- inc-view-sig-refcount! [view-sig]
-  (let [path [view-sig :refcount]]
-    (swap! view-data update-in path #(if % (inc %) 1))
-    (get-in @view-data path)))
-
-(defn- dec-view-sig-refcount! [view-sig]
-  (let [path [view-sig :refcount]]
-    (swap! view-data update-in path #(if % (dec %) 0))
-    (get-in @view-data path)))
-
-(defn- add-initial-view-data! [view-sig data]
+(defn- handle-view-refresh [view-sig data]
   (let [cursor (->view-sig-cursor view-sig)]
     (reset! cursor data)))
 
-(defn- remove-view-data! [view-sig]
-  (swap! view-data dissoc view-sig))
+(defn subscribed?
+  "Returns true if we are currently subscribed to the specified view."
+  [view-sig]
+  (boolean (get view-data view-sig)))
 
-(defn- apply-delete-deltas [existing-data delete-deltas]
-  (reduce
-    (fn [result row-to-delete]
-      (remove #(= % row-to-delete) result))
-    existing-data
-    delete-deltas))
-
-(defn- apply-insert-deltas [existing-data insert-deltas]
-  (concat existing-data insert-deltas))
-
-(defn- apply-deltas! [view-sig deltas]
-  (let [cursor (->view-sig-cursor view-sig)]
-    (doseq [{:keys [refresh-set insert-deltas delete-deltas]} deltas]
-      (if refresh-set         (reset! cursor refresh-set))
-      (if (seq delete-deltas) (swap! cursor apply-delete-deltas delete-deltas))
-      (if (seq insert-deltas) (swap! cursor apply-insert-deltas insert-deltas)))))
-
-(defn- handle-view-data-init [{:keys [body]}]
-  (doseq [[view-sig data] body]
-    (add-initial-view-data! view-sig data)))
-
-(defn- handle-view-deltas [{:keys [body]}]
-  (doseq [delta-batch body]
-    (doseq [[view-sig deltas] delta-batch]
-      (apply-deltas! view-sig deltas))))
+(defn- update-for-unsubscription!
+  [view-sig]
+  (swap! view-data
+         (fn [vd]
+           (let [{:keys [refcount data]} (get vd view-sig)]
+             (if (= 1 refcount)
+               (dissoc vd view-sig)
+               (update-in vd [view-sig :refcount] dec))))))
 
 (defn unsubscribe!
   "Unsubscribes from all of the specified view(s). No further updates from the
@@ -78,10 +52,22 @@
    the server is cleared."
   [view-sigs]
   (doseq [view-sig view-sigs]
-    (let [refcount (dec-view-sig-refcount! view-sig)]
-      (when (<= refcount 0)
-        (remove-view-data! view-sig)
-        (browserchannel/send :views.unsubscribe [view-sig])))))
+    (let [vd (update-for-unsubscription! view-sig)]
+      (if-not (get vd view-sig)
+        (send-data! [:views/unsubscribe view-sig])))))
+
+(defn- update-for-subscription!
+  [view-sig]
+  (swap! view-data
+         (fn [vd]
+           (let [{:keys [refcount data]} (get vd view-sig)]
+             ; for the first subscription, add an initial entry for this view
+             ; with empty data. the server will send us initial data as
+             ; a standard view refresh when the subscription is processed
+             (if-not refcount
+               (assoc vd view-sig {:refcount 1
+                                   :data     nil})
+               (update-in vd [view-sig :refcount] inc))))))
 
 (defn subscribe!
   "Subscribes to the specified view(s). Updates to the data on the server will
@@ -89,10 +75,11 @@
    render it in any component(s)."
   [view-sigs]
   (doseq [view-sig view-sigs]
-    (let [refcount (inc-view-sig-refcount! view-sig)]
-      (when (= refcount 1)
-        (add-initial-view-data! view-sig nil)
-        (browserchannel/send :views.subscribe [view-sig])))))
+    (let [vd (update-for-subscription! view-sig)]
+      ; on the first subscription we need to tell the server we are subscribing
+      ; to this view
+      (if (= 1 (get-in vd [view-sig :refcount]))
+        (send-data! [:views/subscribe view-sig])))))
 
 (defn update-subscriptions!
   "Unsubscribes from old-view-sigs and then subscribes to new-view-sigs. This
@@ -102,9 +89,12 @@
   (unsubscribe! old-view-sigs)
   (subscribe! new-view-sigs))
 
-(defn init!
-  "Sets up message handling needed to process incoming view subscription deltas.
-   Should be called once on page load after BrowserChannel has been initialized."
-  []
-  (browserchannel/message-handler :views.init handle-view-data-init)
-  (browserchannel/message-handler :views.deltas handle-view-deltas))
+(defn on-receive!
+  [data]
+  (when (relevant-event? data)
+    (let [[event & args] data]
+      (condp = event
+        :views/refresh (handle-view-refresh (first args) (second args))
+        (js/console.log "unrecognized event" event "-- full received data:" data))
+      ; indicating that we handled the received event
+      true)))

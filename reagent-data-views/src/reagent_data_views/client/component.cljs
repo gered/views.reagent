@@ -2,7 +2,7 @@
   (:require
     [clojure.set :refer [difference]]
     [reagent.core :as r]
-    [reagent.impl.util :refer [reagent-component?]]
+    [reagent.impl.component :refer [reagent-component?]]
     [reagent-data-views.client.core :as views]
     [reagent-data-views.client.utils :refer [update-component-state!]]))
 

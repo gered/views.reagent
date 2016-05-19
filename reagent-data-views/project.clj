@@ -4,7 +4,7 @@
   :license      {:name "MIT License"
                  :url  "http://opensource.org/licenses/MIT"}
 
-  :dependencies []
+  :dependencies [[org.clojure/tools.logging "0.3.1"]]
 
   :profiles     {:provided
                  {:dependencies

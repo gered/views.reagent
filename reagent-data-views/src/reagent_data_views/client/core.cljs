@@ -26,7 +26,7 @@
          read-only manner. Using this cursor to change the data will *not*
          propagate the changes to the server."
   [view-sig]
-  (r/cursor [view-sig :data] view-data))
+  (r/cursor view-data [view-sig :data]))
 
 (defn- handle-view-refresh [view-sig data]
   (let [cursor (->view-sig-cursor view-sig)]

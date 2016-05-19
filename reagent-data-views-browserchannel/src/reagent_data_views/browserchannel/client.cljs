@@ -8,9 +8,9 @@
    as the client/server messaging backend. should be called once on page load before
    browserchannel is initialized."
   []
-  (swap! client/send-fn
-         (fn [data]
-           (browserchannel/send-data! data))))
+  (reset! client/send-fn
+          (fn [data]
+            (browserchannel/send-data! data))))
 
 (def middleware
   "clj-browserchannel client-side event middleware. this should be included in the

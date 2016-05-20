@@ -1,9 +1,7 @@
-(ns reagent-data-views.utils
-  (:require
-    [clojure.string :as string]))
+(ns reagent-data-views.utils)
 
 (defn relevant-event?
   [data]
   (and (vector? data)
        (keyword? (first data))
-       (string/starts-with? (name (first data)) "views/")))
+       (= (namespace (first data)) "views")))

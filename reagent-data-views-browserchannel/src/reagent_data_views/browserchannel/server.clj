@@ -10,9 +10,9 @@
    necessary to hook views and reagent-data-views together via browserchannel."
   []
   (views/set-send-fn!
-    (fn [client-id [[view-id parameters] view-data]]
-      (log/trace client-id "refresh view" [view-id parameters])
-      (browserchannel/send-data! client-id [:views/refresh [view-id parameters] view-data]))))
+    (fn [client-id [view-sig view-data]]
+      (log/trace client-id "refresh view" view-sig)
+      (browserchannel/send-data! client-id [:views/refresh view-sig view-data]))))
 
 (def middleware
   "clj-browserchannel server-side event middleware. this should be included in the

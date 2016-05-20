@@ -1,6 +1,5 @@
 (ns reagent-data-views.server.core
   (:require
-    [clojure.string :as string]
     [clojure.tools.logging :as log]
     [views.core :as views]
     [reagent-data-views.utils :refer [relevant-event?]]))
@@ -13,14 +12,16 @@
 (defn handle-subscriptions!
   [client-id view-sig]
   (log/trace client-id "subscribing to" view-sig)
-  (let [{:keys [namespace view-id parameters]} view-sig]
-    (views/subscribe! namespace view-id parameters client-id)))
+  (let [{:keys [view-id parameters]} view-sig]
+    ; TODO: namespace
+    (views/subscribe! nil view-id parameters client-id)))
 
 (defn handle-unsubscriptions!
   [client-id view-sig]
   (log/trace client-id "unsubscribing from" view-sig)
-  (let [{:keys [namespace view-id parameters]} view-sig]
-    (views/unsubscribe! namespace view-id parameters client-id)))
+  (let [{:keys [view-id parameters]} view-sig]
+    ; TODO: namespace
+    (views/unsubscribe! nil view-id parameters client-id)))
 
 (defn on-receive!
   [client-id data]

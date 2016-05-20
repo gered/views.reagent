@@ -20,12 +20,12 @@
   {:on-receive
    (fn [handler]
      (fn [client-id request data]
-       (if-not (server/on-receive! client-id data)
+       (if-not (server/on-receive! client-id data {:request request})
          ; only pass along receive events for data not intended for the views system
          (handler client-id request data))))
 
    :on-close
    (fn [handler]
      (fn [client-id request reason]
-       (server/on-close! client-id)
+       (server/on-close! client-id {:request request})
        (handler client-id request reason)))})

@@ -8,11 +8,12 @@
 (defn configure-views!
   "performs browserchannel-specific initialization on the views system that is
    necessary to hook views and reagent-data-views together via browserchannel."
-  []
+  [& {:keys [context-fn]}]
   (views/set-send-fn!
     (fn [client-id [view-sig view-data]]
       (log/trace client-id "refresh view" view-sig)
-      (browserchannel/send-data! client-id [:views/refresh view-sig view-data]))))
+      (browserchannel/send-data! client-id [:views/refresh view-sig view-data])))
+  (server/set-context-fn! context-fn))
 
 (def middleware
   "clj-browserchannel server-side event middleware. this should be included in the

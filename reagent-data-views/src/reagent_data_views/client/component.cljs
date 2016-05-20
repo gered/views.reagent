@@ -55,8 +55,10 @@
    NOTE: The data returned by this function is intended to be used in a
          read-only manner. Using this cursor to change the data will *not*
          propagate the changes to the server."
-  [view-sig]
-  (let [this (r/current-component)]
+  [view-id & parameters]
+  (let [view-sig {:view-id    view-id
+                  :parameters (or parameters [])}
+        this     (r/current-component)]
     (assert (not (nil? this)) "view-cursor can only be used within a defvc component's render function.")
     (update-component-state! this #(update-in % [:used-view-sigs] conj view-sig))
     (views/->view-sig-cursor view-sig)))

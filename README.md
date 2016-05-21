@@ -1,9 +1,15 @@
 # reagent-data-views
 
-TODO: Update this. This library, while I think it's pretty darn awesome, uses out of date libraries (the views library in particular is waaaaaay old, no one would want to use this version now). Plus a bunch of dependencies (including the aforementioned views library) are not on Clojars, so a bunch of manual installations in is necessary to use this at the moment.
+Reagent components that can subscribe to receive realtime database updates.
+
+### This library is still in the experimental stages! ###
+
+I'm hoping to have a release with documentation and examples soon. For now, tread
+carefully when browsing through the code in this repository!
+
 
 ## License
 
-Copyright © 2014 Gered King
+Copyright © 2016 Gered King
 
 Distributed under the the MIT License. See LICENSE for more details.

@@ -7,6 +7,8 @@ Reagent components that can subscribe to receive realtime database updates.
 I'm hoping to have a release with documentation and examples soon. For now, tread
 carefully when browsing through the code in this repository!
 
+This requires the use of my fork of the [views](https://github.com/gered/views) library
+(which is also currently in the experimental stage).
 
 ## License
 

@@ -22,7 +22,7 @@ As well, you can install [views-honeysql](https://github.com/gered/views-honeysq
 if you want to try out using HoneySQL instead of SQL with views. But
 this example app does not use it so it's not required.
 
-Once these libraries are install, you can simply build the ClojureScript:
+Once these libraries are installed, you can simply build the ClojureScript:
 
     $ lein cljsbuild once
 
@@ -30,9 +30,13 @@ And then start up a REPL and run:
 
     (-main)
 
-And a new browser window should open to the app.
+Or more simply, just do:
 
-Alternatively, to build and run in one go:
+    $ lein run
+
+Done either way, a new browser window should open to the app.
+
+Alternatively, to build the ClojureScript and run the app all in one go:
 
     $ lein rundemo
 

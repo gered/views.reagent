@@ -2,8 +2,9 @@
   (:require
     [clojure.set :refer [difference]]
     [reagent.core :as r]
+    [reagent.ratom :refer [RCursor]]
     [reagent.impl.component :refer [reagent-component?]]
-    [reagent-data-views.client.core :as views]
+    [reagent-data-views.client.core :as rdv]
     [reagent-data-views.client.utils :refer [update-component-state!]]))
 
 (defn unsubscribe-all!
@@ -12,7 +13,7 @@
   [this]
   (assert (reagent-component? this))
   (let [last-used-view-sigs (:last-used-view-sigs (r/state this))]
-    (views/unsubscribe! last-used-view-sigs)
+    (rdv/unsubscribe! last-used-view-sigs)
     (update-component-state! this #(dissoc % :used-view-sigs :last-used-view-sigs))))
 
 (defn prepare-for-render!
@@ -38,7 +39,7 @@
     (if (not= used-view-sigs last-used-view-sigs)
       (let [sigs-to-unsub (vec (difference last-used-view-sigs used-view-sigs))
             sigs-to-sub   (vec (difference used-view-sigs last-used-view-sigs))]
-        (views/update-subscriptions! sigs-to-sub sigs-to-unsub)
+        (rdv/update-subscriptions! sigs-to-sub sigs-to-unsub)
         (r/set-state this {:used-view-sigs      #{}
                            :last-used-view-sigs used-view-sigs})))))
 
@@ -61,4 +62,21 @@
         this     (r/current-component)]
     (assert (not (nil? this)) "view-cursor can only be used within a defvc component's render function.")
     (update-component-state! this #(update-in % [:used-view-sigs] conj view-sig))
-    (views/->view-sig-cursor view-sig)))
+    (rdv/->view-sig-cursor view-sig)))
+
+(defn loading?
+  "Returns true if the given view-cursor is still waiting for initial data
+   to be received from the server. Once that first set of data is received,
+   this function will always return false and cannot be used to e.g. check
+   if an updated set of data is waiting to be received."
+  [view-cursor]
+  (if (instance? RCursor view-cursor)
+    (let [[view-sig & _] (.-path view-cursor)
+          cursor         (r/cursor rdv/view-data [view-sig])]
+      ; if even :refcount is missing, it means that this is the first render
+      ; of the component where the view-cursor was created (a subscription
+      ; request has not even been sent to the server yet, so :loading? has
+      ; not yet been set yet). once the component's first render is finished,
+      ; :loading? will be set as we expect.
+      (boolean (or (not (:refcount @cursor))
+                   (:loading? @cursor))))))

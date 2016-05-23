@@ -29,8 +29,11 @@
   (r/cursor view-data [view-sig :data]))
 
 (defn- handle-view-refresh [view-sig data]
-  (let [cursor (->view-sig-cursor view-sig)]
-    (reset! cursor data)))
+  (let [cursor (r/cursor view-data [view-sig])]
+    (swap! cursor
+           #(-> %
+                (dissoc :loading?)
+                (assoc :data data)))))
 
 (defn subscribed?
   "Returns true if we are currently subscribed to the specified view."
@@ -66,6 +69,7 @@
              ; a standard view refresh when the subscription is processed
              (if-not refcount
                (assoc vd view-sig {:refcount 1
+                                   :loading? true
                                    :data     nil})
                (update-in vd [view-sig :refcount] inc))))))
 

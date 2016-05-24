@@ -58,7 +58,7 @@
          propagate the changes to the server."
   [view-id & parameters]
   (let [view-sig {:view-id    view-id
-                  :parameters (or parameters [])}
+                  :parameters (if parameters (vec parameters) [])}
         this     (r/current-component)]
     (assert (not (nil? this)) "view-cursor can only be used within a defvc component's render function.")
     (update-component-state! this #(update-in % [:used-view-sigs] conj view-sig))

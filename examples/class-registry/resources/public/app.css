@@ -1,0 +1,30 @@
+body {
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+
+#app-title {
+	margin-top: 0px;
+}
+
+.list div.row {
+	padding-top: 5px;
+}
+
+.list div.row:hover {
+	background-color: #d9edf7;
+}
+
+.class-registry {
+	margin-top: 3px;
+	margin-bottom: 0px;
+}
+
+div.actions button {
+	margin-right: 5px;
+}
+
+div.row .value {
+	padding-top: 6px;
+	padding-bottom: 6px;
+}

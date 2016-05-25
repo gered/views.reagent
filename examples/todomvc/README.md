@@ -9,6 +9,8 @@ to that data to any number of users currently viewing the app.
 
 ## Running
 
+### A quick note on the dependencies used
+
 Since Reagent Data Views and the Views library it depends on are all
 currently in somewhat of an experimental / pre-beta state right now,
 you will need to first clone the following repositories and manually
@@ -22,24 +24,33 @@ As well, you can install [views-honeysql](https://github.com/gered/views-honeysq
 if you want to try out using HoneySQL instead of SQL with views. But
 this example app does not use it so it's not required.
 
-Once these libraries are installed, you can simply build the ClojureScript:
+### Creating the Database
+
+This example app uses a PostgreSQL database. The SQL script to create
+it is in `create_db.sql`. You can easily pipe it into `psql` at a 
+command line to create it quickly, for example:
+
+    $ psql < create_db.sql
+
+(Of course, add any username/host parameters you might need)
+
+### Starting It Up
+
+To build everything and run in one step:
+
+    $ lein rundemo
+    
+Then open up a web browser or two and head to http://localhost:8080/
+to see the web app in action.
+
+If you want to run this application in a REPL, just be sure to build
+the ClojureScript:
 
     $ lein cljsbuild once
 
-And then start up a REPL and run:
+And then in the REPL you can just run:
 
     (-main)
 
-Or more simply, just do:
-
-    $ lein run
-
-Done either way, a new browser window should open to the app.
-
-Alternatively, to build the ClojureScript and run the app all in one go:
-
-    $ lein rundemo
-
-Open up a second browser and make changes by adding or deleting a Todo,
-or marking them as completed, etc. and see that the changes are
-instantly propagated to all clients.
+to start the web app (you should be put in the correct namespace 
+immediately).

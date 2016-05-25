@@ -16,6 +16,7 @@
     [views.sql.view :refer [view]]
     [reagent-data-views.browserchannel.server :as rdv-browserchannel]))
 
+(def dev? (boolean (env :dev)))
 
 (def db {:classname   "org.postgresql.Driver"
          :subprotocol "postgresql"
@@ -38,7 +39,7 @@
 ;; the actual SQL query and is followed by any number of parameters to be used in
 ;; the query.
 
-(defn get-todos []
+(defn todos-list []
   ["SELECT id, title, done FROM todos ORDER BY title"])
 
 
@@ -53,7 +54,7 @@
 ;; "view signature" or "view-sig" when the client subscribes to a view.
 
 (def views
-  [(view :todos db #'get-todos)])
+  [(view :todos db #'todos-list)])
 
 
 
@@ -114,7 +115,7 @@
     ; main page
     (GET "/" [] (pebble/render-resource
                   "html/app.html"
-                  {:dev       (boolean (env :dev))
+                  {:dev       dev?
                    :csrfToken *anti-forgery-token*}))
 
     (route/resources "/")
@@ -122,7 +123,7 @@
 
 (def handler
   (-> app-routes
-      (wrap-defaults site-defaults)
+      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
       ; NOTE: We are passing in an empty map for the BrowserChannel event handlers only
       ;       because this todo app is not using BrowserChannel for any purpose other
       ;       then to provide client/server messaging for reagent-data-views. If we
@@ -137,7 +138,7 @@
 ;; Web server startup & main
 
 (defn run-server []
-  (pebble/set-options! :cache (env :dev))
+  (pebble/set-options! :cache (not dev?))
 
   ; init-views takes care of initialization views and reagent-data-views at the same
   ; time. As a result, we do not need to also call views.core/init! anywhere. The
@@ -148,9 +149,7 @@
   ; Component or Mount), you can just call views.core/shutdown!.
   (rdv-browserchannel/init-views! views)
 
-  (if (env :dev)
-    (immutant/run-dmc #'handler {:port 8080})
-    (immutant/run #'handler {:port 8080})))
+  (immutant/run handler {:port 8080}))
 
 (defn -main [& args]
   (run-server))

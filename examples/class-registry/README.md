@@ -6,7 +6,16 @@ classes and then assign the students/professors to those classes. The
 idea is _very_ loosely based off one of the Om tutorial applications
 (the data used is almost identical).
 
-[1]: http://reagent-project.github.io/
+Note that this example is somewhat complicated as there are several
+lists of data shown in the UI, all of which are completely editable
+to the user. While the code is longer as a result, this still serves
+as a more interesting example with several views being used (some
+using parameters).
+
+Definitely take a look at the [TodoMVC][1] example app before diving into
+this and also be sure you're familiar with Reagent.
+
+[1]: https://github.com/gered/reagent-data-views/tree/master/examples/todomvc
 
 ## Running
 

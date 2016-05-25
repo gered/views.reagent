@@ -219,7 +219,8 @@
 ;; Class Registry UI
 
 (defn registration-info
-  "row showing a class registration and allowing removal of it"
+  "row showing a class registration (a person registered in the class shown in the
+   parent component) and allowing removal of it"
   [{:keys [registry_id type] :as registration}]
   [:div.row
    [:div.col-sm-2.value (string/capitalize type)]
@@ -253,8 +254,8 @@
           [:button.btn.btn-sm.btn-primary {:on-click add!} [:span.glyphicon.glyphicon-plus]]]]))))
 
 (defvc class-registry-list
-  "sub-container for showing list of people of a certain type and allowing entry
-   of new people of that same type"
+  "sub-container for showing a list of people registered to a class and allowing
+   registration of additional people to this class"
   [{:keys [class_id code name] :as class}]
   (let [registry (view-cursor :class-registry class_id)]
     [:div.col-sm-12.panel.panel-default.class-registry

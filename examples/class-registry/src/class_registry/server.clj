@@ -27,6 +27,12 @@
 
 
 
+;; View system atom
+
+(defonce view-system (atom {}))
+
+
+
 ;; View functions.
 
 (defn classes-list
@@ -81,47 +87,49 @@
 
 (defn add-person!
   [{:keys [type first_name middle_name last_name email] :as person}]
-  (vexec! db ["INSERT INTO people (type, first_name, middle_name, last_name, email)
+  (vexec! view-system db
+          ["INSERT INTO people (type, first_name, middle_name, last_name, email)
                VALUES (?, ?, ?, ?, ?)"
-              type first_name middle_name last_name email])
+           type first_name middle_name last_name email])
   (response "ok"))
 
 (defn update-person!
   [{:keys [id first_name middle_name last_name email] :as person}]
-  (vexec! db ["UPDATE people SET
-               first_name = ?, middle_name = ?, last_name = ?, email = ?
-               WHERE people_id = ?"
-              first_name middle_name last_name email id])
+  (vexec! view-system db
+          ["UPDATE people SET
+            first_name = ?, middle_name = ?, last_name = ?, email = ?
+            WHERE people_id = ?"
+           first_name middle_name last_name email id])
   (response "ok"))
 
 (defn delete-person!
   [id]
-  (vexec! db ["DELETE FROM people WHERE people_id = ?" id])
+  (vexec! view-system db ["DELETE FROM people WHERE people_id = ?" id])
   (response "ok"))
 
 (defn add-class!
   [{:keys [code name] :as class}]
-  (vexec! db ["INSERT INTO classes (code, name) VALUES (?, ?)" code, name])
+  (vexec! view-system db ["INSERT INTO classes (code, name) VALUES (?, ?)" code, name])
   (response "ok"))
 
 (defn update-class!
   [{:keys [class_id code name] :as class}]
-  (vexec! db ["UPDATE classes SET code = ?, name = ? WHERE class_id = ?" code name class_id])
+  (vexec! view-system db ["UPDATE classes SET code = ?, name = ? WHERE class_id = ?" code name class_id])
   (response "ok"))
 
 (defn delete-class!
   [id]
-  (vexec! db ["DELETE FROM classes WHERE class_id = ?" id])
+  (vexec! view-system db ["DELETE FROM classes WHERE class_id = ?" id])
   (response "ok"))
 
 (defn add-registration!
   [class-id people-id]
-  (vexec! db ["INSERT INTO registry (class_id, people_id) VALUES (?, ?)" class-id people-id])
+  (vexec! view-system db ["INSERT INTO registry (class_id, people_id) VALUES (?, ?)" class-id people-id])
   (response "ok"))
 
 (defn remove-registration!
   [registry-id]
-  (vexec! db ["DELETE FROM registry WHERE registry_id = ?" registry-id])
+  (vexec! view-system db ["DELETE FROM registry WHERE registry_id = ?" registry-id])
   (response "ok"))
 
 
@@ -155,7 +163,7 @@
   (-> app-routes
       (wrap-restful-format :formats [:transit-json])
       (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
-      (wrap-browserchannel {} {:middleware [rdv-browserchannel/middleware]})
+      (wrap-browserchannel {} {:middleware [(rdv-browserchannel/->middleware view-system)]})
       (wrap-immutant-async-adapter)))
 
 
@@ -165,7 +173,7 @@
 (defn run-server []
   (pebble/set-options! :cache (not dev?))
 
-  (rdv-browserchannel/init-views! views)
+  (rdv-browserchannel/init-views! view-system {:views views})
 
   (immutant/run handler {:port 8080}))
 

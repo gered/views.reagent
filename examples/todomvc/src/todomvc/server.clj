@@ -26,6 +26,21 @@
 
 
 
+;; View system atom
+;;
+;; We just declare it, don't need to fill it with anything. The call to views.core/init!
+;; will handle initializing it (or reagent-data-views.browserchannel.server/init-views!
+;; in this example app's case -- it works exactly the same and is a drop-in replacement
+;; for views.core/init!)
+;;
+;; Depending on your exact needs, you can also opt to not pass in any atom to the init
+;; call in which case one is created for you automatically. This may be more convenient
+;; when using Component/Mount for example, but is entirely optional.
+
+(defonce view-system (atom {}))
+
+
+
 ;; View functions.
 ;;
 ;; These are functions which accept any number of parameters provided when the view
@@ -69,15 +84,15 @@
 ;; trigger view refrehses for all subscribers of the views that the hints match.
 
 (defn add-todo! [title]
-  (vexec! db ["INSERT INTO todos (title) VALUES (?)" title])
+  (vexec! view-system db ["INSERT INTO todos (title) VALUES (?)" title])
   (response "ok"))
 
 (defn delete-todo! [id]
-  (vexec! db ["DELETE FROM todos WHERE id = ?" id])
+  (vexec! view-system db ["DELETE FROM todos WHERE id = ?" id])
   (response "ok"))
 
 (defn update-todo! [id title]
-  (vexec! db ["UPDATE todos SET title = ? WHERE id = ?" title id])
+  (vexec! view-system db ["UPDATE todos SET title = ? WHERE id = ?" title id])
   (response "ok"))
 
 (defn toggle-todo! [id]
@@ -85,17 +100,18 @@
   ; just a single UPDATE query. however, it is being done this way to demonstrate
   ; using transactions with vexec!.
   (with-view-transaction
+    view-system
     [dt db]
     (let [done? (:done (first (jdbc/query dt ["SELECT done FROM todos WHERE id = ?" id])))]
-      (vexec! dt ["UPDATE todos SET done = ? WHERE id = ?" (not done?) id]))
+      (vexec! view-system dt ["UPDATE todos SET done = ? WHERE id = ?" (not done?) id]))
     (response "ok")))
 
 (defn mark-all! [done?]
-  (vexec! db ["UPDATE todos SET done = ?" done?])
+  (vexec! view-system db ["UPDATE todos SET done = ?" done?])
   (response "ok"))
 
 (defn delete-all-done! []
-  (vexec! db ["DELETE FROM todos WHERE done = true"])
+  (vexec! view-system db ["DELETE FROM todos WHERE done = true"])
   (response "ok"))
 
 
@@ -130,7 +146,7 @@
       ;       wanted to use it for client/server messaging in our application as well,
       ;       we could pass in any event handlers we want here and it would not intefere
       ;       with reagent-data-views.
-      (wrap-browserchannel {} {:middleware [rdv-browserchannel/middleware]})
+      (wrap-browserchannel {} {:middleware [(rdv-browserchannel/->middleware view-system)]})
       (wrap-immutant-async-adapter)))
 
 
@@ -140,14 +156,15 @@
 (defn run-server []
   (pebble/set-options! :cache (not dev?))
 
-  ; init-views takes care of initialization views and reagent-data-views at the same
+  ; init-views! takes care of initialization views and reagent-data-views at the same
   ; time. As a result, we do not need to also call views.core/init! anywhere. The
-  ; same options you are able to pass to views.core/init! can also be passed in here
-  ; and they will be forwarded along.
+  ; same arguments and options you are able to pass to views.core/init! can also be
+  ; passed in here and they will be forwarded along, as this function is a drop-in
+  ; replacement for views.core/init!.
   ;
   ; if you need to shutdown the views system (e.g. if you're using something like
   ; Component or Mount), you can just call views.core/shutdown!.
-  (rdv-browserchannel/init-views! views)
+  (rdv-browserchannel/init-views! view-system {:views views})
 
   (immutant/run handler {:port 8080}))
 

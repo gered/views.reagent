@@ -1,44 +1,46 @@
 (ns reagent-data-views.server.core
+  (:import
+    (clojure.lang Atom))
   (:require
     [clojure.tools.logging :as log]
     [views.core :as views]
     [reagent-data-views.utils :refer [relevant-event?]]))
 
 (defn- handle-subscriptions!
-  [client-id view-sig context]
+  [^Atom view-system client-id view-sig context]
   (log/trace client-id "subscribing to" view-sig)
-  (views/subscribe! view-sig client-id context))
+  (views/subscribe! view-system view-sig client-id context))
 
 (defn- handle-unsubscriptions!
-  [client-id view-sig context]
+  [^Atom view-system client-id view-sig context]
   (log/trace client-id "unsubscribing from" view-sig)
-  (views/unsubscribe! view-sig client-id context))
+  (views/unsubscribe! view-system view-sig client-id context))
 
 (defn- update-context
-  [existing-context]
-  (if-let [context-fn (get-in @views/view-system [:reagent-data-views :context-fn])]
+  [^Atom view-system existing-context]
+  (if-let [context-fn (get-in @view-system [:reagent-data-views :context-fn])]
     (context-fn existing-context)
     existing-context))
 
 (defn on-close!
-  [client-id context]
+  [^Atom view-system client-id context]
   (log/trace client-id "on-close, unsubscribing from all views")
-  (views/unsubscribe-all! client-id))
+  (views/unsubscribe-all! view-system client-id))
 
 (defn on-receive!
-  [client-id data context]
+  [^Atom view-system client-id data context]
   (when (relevant-event? data)
-    (let [context          (update-context context)
+    (let [context          (update-context view-system context)
           [event view-sig] data
           ; for safety, since this is otherwise coming in un-altered from clients
           view-sig         (dissoc view-sig :namespace)]
       (condp = event
-        :views/subscribe (handle-subscriptions! client-id view-sig context)
-        :views/unsubscribe (handle-unsubscriptions! client-id view-sig context)
+        :views/subscribe (handle-subscriptions! view-system client-id view-sig context)
+        :views/unsubscribe (handle-unsubscriptions! view-system client-id view-sig context)
         (log/warn client-id "unrecognized event" event "-- full received data:" data))
       ; indicating that we handled the received event
       true)))
 
 (defn set-context-fn!
-  [f]
-  (swap! views/view-system assoc-in [:reagent-data-views :context-fn] f))
+  [^Atom view-system f]
+  (swap! view-system assoc-in [:reagent-data-views :context-fn] f))

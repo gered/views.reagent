@@ -4,17 +4,18 @@
     [compojure.core :refer [routes GET POST]]
     [compojure.route :as route]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
+    [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
     [net.thegeez.browserchannel.server :refer [wrap-browserchannel]]
     [net.thegeez.browserchannel.immutant-async-adapter :refer [wrap-immutant-async-adapter]]
     [immutant.web :as immutant]
-    [clj-pebble.core :as pebble]
+    [hiccup.page :refer [html5 include-css include-js]]
+    [hiccup.element :refer [javascript-tag]]
     [environ.core :refer [env]]
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
-    [reagent-data-views.browserchannel.server :as rdv-browserchannel]))
+    [reagent-data-views.browserchannel.server :as rdv]))
 
 (def dev? (boolean (env :dev)))
 
@@ -28,14 +29,8 @@
 
 ;; View system atom
 ;;
-;; We just declare it, don't need to fill it with anything. The call to views.core/init!
-;; will handle initializing it (or reagent-data-views.browserchannel.server/init-views!
-;; in this example app's case -- it works exactly the same and is a drop-in replacement
-;; for views.core/init!)
-;;
-;; Depending on your exact needs, you can also opt to not pass in any atom to the init
-;; call in which case one is created for you automatically. This may be more convenient
-;; when using Component/Mount for example, but is entirely optional.
+;; We just declare it, don't need to fill it with anything. The call below to
+;; reagent-data-views.browserchannel.server/init-views! will take care of it.
 
 (defonce view-system (atom {}))
 
@@ -54,7 +49,8 @@
 ;; the actual SQL query and is followed by any number of parameters to be used in
 ;; the query.
 
-(defn todos-list []
+(defn todos-list
+  []
   ["SELECT id, title, done FROM todos ORDER BY title"])
 
 
@@ -83,19 +79,23 @@
 ;; analyzes the SQL query being run and dispatches "hints" to the view system which
 ;; trigger view refrehses for all subscribers of the views that the hints match.
 
-(defn add-todo! [title]
+(defn add-todo!
+  [title]
   (vexec! view-system db ["INSERT INTO todos (title) VALUES (?)" title])
   (response "ok"))
 
-(defn delete-todo! [id]
+(defn delete-todo!
+  [id]
   (vexec! view-system db ["DELETE FROM todos WHERE id = ?" id])
   (response "ok"))
 
-(defn update-todo! [id title]
+(defn update-todo!
+  [id title]
   (vexec! view-system db ["UPDATE todos SET title = ? WHERE id = ?" title id])
   (response "ok"))
 
-(defn toggle-todo! [id]
+(defn toggle-todo!
+  [id]
   ; note that a transaction is obviously not necessary here as we could have used
   ; just a single UPDATE query. however, it is being done this way to demonstrate
   ; using transactions with vexec!.
@@ -106,13 +106,31 @@
       (vexec! view-system dt ["UPDATE todos SET done = ? WHERE id = ?" (not done?) id]))
     (response "ok")))
 
-(defn mark-all! [done?]
+(defn mark-all!
+  [done?]
   (vexec! view-system db ["UPDATE todos SET done = ?" done?])
   (response "ok"))
 
-(defn delete-all-done! []
+(defn delete-all-done!
+  []
   (vexec! view-system db ["DELETE FROM todos WHERE done = true"])
   (response "ok"))
+
+
+
+;; main page html
+
+(defn render-page
+  []
+  (html5
+    [:head
+     [:title "todomvc with reagent"]
+     (include-css "todos.css" "todosanim.css")
+     (include-js "cljs/app.js")]
+    [:body
+     (anti-forgery-field)
+     [:div#app [:h1 "This will become todomvc when the ClojureScript is compiled"]]
+     (javascript-tag "todomvc.client.run();")]))
 
 
 
@@ -129,44 +147,40 @@
     (POST "/todos/delete-all-done" [] (delete-all-done!))
 
     ; main page
-    (GET "/" [] (pebble/render-resource
-                  "html/app.html"
-                  {:dev       dev?
-                   :csrfToken *anti-forgery-token*}))
+    (GET "/" [] (render-page))
 
     (route/resources "/")
     (route/not-found "not found")))
 
 (def handler
   (-> app-routes
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
+      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] true #_(not dev?)))
       ; NOTE: We are passing in an empty map for the BrowserChannel event handlers only
       ;       because this todo app is not using BrowserChannel for any purpose other
       ;       then to provide client/server messaging for reagent-data-views. If we
       ;       wanted to use it for client/server messaging in our application as well,
       ;       we could pass in any event handlers we want here and it would not intefere
       ;       with reagent-data-views.
-      (wrap-browserchannel {} {:middleware [(rdv-browserchannel/->middleware view-system)]})
+      (wrap-browserchannel {} {:middleware [(rdv/->middleware view-system)]})
       (wrap-immutant-async-adapter)))
 
 
 
 ;; Web server startup & main
 
-(defn run-server []
-  (pebble/set-options! :cache (not dev?))
-
-  ; init-views! takes care of initialization views and reagent-data-views at the same
+(defn run-server
+  []
+  ; init-views! takes care of initialization of views and reagent-data-views at the same
   ; time. As a result, we do not need to also call views.core/init! anywhere. The
   ; same arguments and options you are able to pass to views.core/init! can also be
-  ; passed in here and they will be forwarded along, as this function is a drop-in
-  ; replacement for views.core/init!.
-  ;
+  ; passed in here and they will be forwarded along, as this function is intended to be
+  ; a drop-in replacement for views.core/init!.
   ; if you need to shutdown the views system (e.g. if you're using something like
   ; Component or Mount), you can just call views.core/shutdown!.
-  (rdv-browserchannel/init-views! view-system {:views views})
+  (rdv/init-views! view-system {:views views})
 
   (immutant/run handler {:port 8080}))
 
-(defn -main [& args]
+(defn -main
+  [& args]
   (run-server))

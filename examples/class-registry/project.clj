@@ -16,7 +16,7 @@
                   [reagent-data-views "0.2.0-SNAPSHOT"]
                   [reagent-data-views-browserchannel "0.1.0-SNAPSHOT"]
 
-                  [clj-pebble "0.2.0"]
+                  [hiccup "1.0.5"]
                   [reagent "0.6.0-alpha2"]
                   [cljsjs/bootstrap "3.3.6-1"]
                   [cljs-ajax "0.5.4"]
@@ -33,8 +33,10 @@
                                     [:cljsbuild :builds :main :compiler :output-to]]
   :cljsbuild     {:builds {:main
                            {:source-paths ["src"]
-                            :compiler     {:output-to     "resources/public/cljs/app.js"
+                            :compiler     {:main          class-registry.client
+                                           :output-to     "resources/public/cljs/app.js"
                                            :output-dir    "resources/public/cljs/target"
+                                           :asset-path    "cljs/target"
                                            :source-map    true
                                            :optimizations :none
                                            :pretty-print  true}}}}

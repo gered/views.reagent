@@ -2,10 +2,9 @@
   (:require
     [reagent.core :as r]
     [ajax.core :refer [POST default-interceptors to-interceptor]]
-    [dommy.core :refer-macros [sel1]]
     [net.thegeez.browserchannel.client :as browserchannel]
     [reagent-data-views.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [reagent-data-views.browserchannel.client :as rdv-browserchannel]))
+    [reagent-data-views.browserchannel.client :as rdv]))
 
 ;; Todo MVC - Reagent Implementation
 ;;
@@ -34,7 +33,8 @@
 
 ;; UI Components
 
-(defn todo-input [{:keys [title on-save on-stop]}]
+(defn todo-input
+  [{:keys [title on-save on-stop]}]
   (let [val (r/atom title)
         stop #(do (reset! val "")
                   (if on-stop (on-stop)))
@@ -53,7 +53,8 @@
 (def todo-edit (with-meta todo-input
                           {:component-did-mount #(.focus (r/dom-node %))}))
 
-(defn todo-stats [{:keys [filt active done]}]
+(defn todo-stats
+  [{:keys [filt active done]}]
   (let [props-for (fn [name]
                     {:class (if (= name @filt) "selected")
                      :on-click #(reset! filt name)})]
@@ -68,7 +69,8 @@
        [:button#clear-completed {:on-click clear-done}
         "Clear completed " done])]))
 
-(defn todo-item []
+(defn todo-item
+  []
   (let [editing (r/atom false)]
     (fn [{:keys [id done title]}]
       [:li {:class (str (if done "completed ")
@@ -108,7 +110,8 @@
 ;; NOTE:
 ;; view-cursor cannot be used in a Reagent component that was created using defn.
 
-(defvc todo-app [props]
+(defvc todo-app
+  [props]
   (let [filt (r/atom :all)]
     (fn []
       (let [items  (view-cursor :todos)
@@ -144,12 +147,12 @@
 
 
 ;; Some unfortunately necessary set up to ensure we send the CSRF token back with
-;; AJAX requests (clj-browserchannel handles this automatically for it's own HTTP
-;; requests, so the set up we do is only for our own application code).
+;; AJAX requests
 
-(defn get-anti-forgery-token []
-  (if-let [tag (sel1 "meta[name='anti-forgery-token']")]
-    (.-content tag)))
+(defn get-anti-forgery-token
+  []
+  (if-let [hidden-field (.getElementById js/document "__anti-forgery-token")]
+    (.-value hidden-field)))
 
 (def csrf-interceptor
   (to-interceptor {:name "CSRF Interceptor"
@@ -161,9 +164,10 @@
 
 ;; Page load
 
-(defn ^:export run []
+(defn ^:export run
+  []
   ; Configure reagent-data-views and then BrowserChannel.
-  (rdv-browserchannel/configure!)
+  (rdv/configure!)
 
   ; NOTE: We are passing in an empty map for the BrowserChannel event handlers only
   ;       because this todo app is not using BrowserChannel for any purpose other
@@ -171,6 +175,6 @@
   ;       wanted to use it for client/server messaging in our application as well,
   ;       we could pass in any event handlers we want here and it would not intefere
   ;       with reagent-data-views.
-  (browserchannel/connect! {} {:middleware [rdv-browserchannel/middleware]})
+  (browserchannel/connect! {} {:middleware [rdv/middleware]})
 
   (r/render-component [todo-app] (.getElementById js/document "app")))

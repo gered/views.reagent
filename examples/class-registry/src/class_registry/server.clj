@@ -4,18 +4,19 @@
     [compojure.core :refer [routes GET POST]]
     [compojure.route :as route]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
     [ring.middleware.format :refer [wrap-restful-format]]
+    [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
     [net.thegeez.browserchannel.server :refer [wrap-browserchannel]]
     [net.thegeez.browserchannel.immutant-async-adapter :refer [wrap-immutant-async-adapter]]
     [immutant.web :as immutant]
-    [clj-pebble.core :as pebble]
+    [hiccup.page :refer [html5 include-css include-js]]
+    [hiccup.element :refer [javascript-tag]]
     [environ.core :refer [env]]
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
-    [reagent-data-views.browserchannel.server :as rdv-browserchannel]))
+    [reagent-data-views.browserchannel.server :as rdv]))
 
 (def dev? (boolean (env :dev)))
 
@@ -134,6 +135,25 @@
 
 
 
+;; main page html
+
+(defn render-page
+  []
+  (html5
+    [:head
+     [:title "Class Registry"]
+     [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+     (include-css
+       "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+       "app.css")
+     (include-js "cljs/app.js")]
+    [:body
+     (anti-forgery-field)
+     [:div#app [:h1 "This will be replaced by the Class Registry app when the ClojureScript is compiled."]]
+     (javascript-tag "class_registry.client.run();")]))
+
+
+
 ;; Compojure routes and Ring handler
 
 (def app-routes
@@ -151,10 +171,7 @@
     (POST "/registry/remove" [id]                 (remove-registration! id))
 
     ; main page
-    (GET "/" [] (pebble/render-resource
-                  "html/app.html"
-                  {:dev       dev?
-                   :csrfToken *anti-forgery-token*}))
+    (GET "/" [] (render-page))
 
     (route/resources "/")
     (route/not-found "not found")))
@@ -163,19 +180,18 @@
   (-> app-routes
       (wrap-restful-format :formats [:transit-json])
       (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
-      (wrap-browserchannel {} {:middleware [(rdv-browserchannel/->middleware view-system)]})
+      (wrap-browserchannel {} {:middleware [(rdv/->middleware view-system)]})
       (wrap-immutant-async-adapter)))
 
 
 
 ;; Web server startup & main
 
-(defn run-server []
-  (pebble/set-options! :cache (not dev?))
-
-  (rdv-browserchannel/init-views! view-system {:views views})
-
+(defn run-server
+  []
+  (rdv/init-views! view-system {:views views})
   (immutant/run handler {:port 8080}))
 
-(defn -main [& args]
+(defn -main
+  [& args]
   (run-server))

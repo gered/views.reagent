@@ -5,7 +5,7 @@
     [ajax.core :refer [POST default-interceptors to-interceptor]]
     [net.thegeez.browserchannel.client :as browserchannel]
     [reagent-data-views.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [reagent-data-views.browserchannel.client :as rdv-browserchannel]))
+    [reagent-data-views.browserchannel.client :as rdv]))
 
 ;; Class Registry - Reagent Data Views example app
 ;;
@@ -361,8 +361,8 @@
 
 (defn get-anti-forgery-token
   []
-  (if-let [tag (aget (.querySelectorAll js/document "meta[name='anti-forgery-token']") 0)]
-    (.-content tag)))
+  (if-let [hidden-field (.getElementById js/document "__anti-forgery-token")]
+    (.-value hidden-field)))
 
 (def csrf-interceptor
   (to-interceptor {:name "CSRF Interceptor"
@@ -376,8 +376,7 @@
 
 (defn ^:export run
   []
-  (enable-console-print!)
-  (rdv-browserchannel/configure!)
-  (browserchannel/connect! {} {:middleware [rdv-browserchannel/middleware]})
+  (rdv/configure!)
+  (browserchannel/connect! {} {:middleware [rdv/middleware]})
 
   (r/render-component [class-registry-app] (.getElementById js/document "app")))

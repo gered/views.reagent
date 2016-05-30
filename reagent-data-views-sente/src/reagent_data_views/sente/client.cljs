@@ -3,7 +3,7 @@
     [reagent-data-views.client.core :as client]
     [taoensso.sente :as sente]))
 
-(defonce send-buffer (atom []))
+(defonce ^:private send-buffer (atom []))
 
 (defn- sente-connected?
   [sente-chsk-map]

@@ -30,7 +30,8 @@
   [view-sig]
   (r/cursor view-data [view-sig :data]))
 
-(defn- handle-view-refresh [[view-sig data]]
+(defn- handle-view-refresh
+  [[view-sig data]]
   (swap! view-data
          (fn [view-data]
            (if (contains? view-data view-sig)

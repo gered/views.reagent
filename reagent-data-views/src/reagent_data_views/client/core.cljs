@@ -31,10 +31,13 @@
   (r/cursor view-data [view-sig :data]))
 
 (defn- handle-view-refresh [[view-sig data]]
-  (let [cursor (r/cursor view-data [view-sig])]
-    (swap! cursor
-           #(assoc % :loading false
-                     :data data))))
+  (swap! view-data
+         (fn [view-data]
+           (if (contains? view-data view-sig)
+             (update-in view-data [view-sig] assoc
+                        :loading false
+                        :data data)
+             view-data))))
 
 (defn subscribed?
   "Returns true if we are currently subscribed to the specified view."

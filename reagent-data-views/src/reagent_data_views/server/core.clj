@@ -43,4 +43,5 @@
 
 (defn set-context-fn!
   [^Atom view-system f]
-  (swap! view-system assoc-in [:reagent-data-views :context-fn] f))
+  (swap! view-system assoc-in [:reagent-data-views :context-fn] f)
+  view-system)

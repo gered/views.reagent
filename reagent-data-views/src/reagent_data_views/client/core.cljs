@@ -28,7 +28,7 @@
   [view-sig]
   (r/cursor view-data [view-sig :data]))
 
-(defn- handle-view-refresh [view-sig data]
+(defn- handle-view-refresh [[view-sig data]]
   (let [cursor (r/cursor view-data [view-sig])]
     (swap! cursor
            #(assoc % :loading false
@@ -107,7 +107,7 @@
   (when (relevant-event? data)
     (let [[event & args] data]
       (condp = event
-        :views/refresh (handle-view-refresh (first args) (second args))
+        :views/refresh (handle-view-refresh (first args))
         (js/console.log "unrecognized event" event "-- full received data:" data))
       ; indicating that we handled the received event
       true)))

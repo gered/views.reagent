@@ -10,7 +10,7 @@
 (defn- views-send-fn
   [client-id [view-sig view-data]]
   (log/trace client-id "refresh view" view-sig)
-  (browserchannel/send-data! client-id [:views/refresh view-sig view-data]))
+  (browserchannel/send-data! client-id [:views/refresh [view-sig view-data]]))
 
 (defn init-views!
   "initializes the views system and adds browserchannel-specific configuration

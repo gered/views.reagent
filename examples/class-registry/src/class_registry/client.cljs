@@ -376,7 +376,7 @@
 
 (defn ^:export run
   []
-  (rdv/configure!)
+  (rdv/init!)
   (browserchannel/connect! {} {:middleware [rdv/middleware]})
 
   (r/render-component [class-registry-app] (.getElementById js/document "app")))

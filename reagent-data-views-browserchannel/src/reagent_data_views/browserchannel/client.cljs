@@ -3,7 +3,7 @@
     [net.thegeez.browserchannel.client :as browserchannel]
     [reagent-data-views.client.core :as client]))
 
-(defn configure!
+(defn init!
   "performs initial configuration necessary to hook browserchannel into reagent-data-views
    as the client/server messaging backend. should be called once on page load before
    browserchannel is initialized."

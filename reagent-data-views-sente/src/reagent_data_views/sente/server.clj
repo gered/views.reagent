@@ -26,7 +26,7 @@
     (on-close! view-system ev)
     (on-receive! view-system ev)))
 
-(defn init-views!
+(defn init!
   ([^Atom view-system sente-chsk-map options]
    (let [options (-> options
                      (assoc :send-fn #(views-send-fn sente-chsk-map %1 %2)))]
@@ -35,4 +35,4 @@
      (views/init! view-system options)
      (server/set-context-fn! view-system (:context-fn options))))
   ([sente-chsk-map options]
-   (init-views! (atom {}) sente-chsk-map options)))
+   (init! (atom {}) sente-chsk-map options)))

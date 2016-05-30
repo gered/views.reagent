@@ -12,7 +12,7 @@
   (log/trace client-id "refresh view" view-sig)
   (browserchannel/send-data! client-id [:views/refresh [view-sig view-data]]))
 
-(defn init-views!
+(defn init!
   "initializes the views system and adds browserchannel-specific configuration
    to it to enable the necessary hooks into reagent-data-views.
    this function acts as a direct replacement to calling views.core/init!, so
@@ -30,7 +30,7 @@
      (views/init! view-system options)
      (server/set-context-fn! view-system (:context-fn options))))
   ([options]
-    (init-views! (atom {}) options)))
+    (init! (atom {}) options)))
 
 (defn ->middleware
   "returns clj-browserchannel server-side event middleware for injecting

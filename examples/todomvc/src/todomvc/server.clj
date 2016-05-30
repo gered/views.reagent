@@ -177,7 +177,7 @@
   ; a drop-in replacement for views.core/init!.
   ; if you need to shutdown the views system (e.g. if you're using something like
   ; Component or Mount), you can just call views.core/shutdown!.
-  (rdv/init-views! view-system {:views views})
+  (rdv/init! view-system {:views views})
 
   (immutant/run handler {:port 8080}))
 

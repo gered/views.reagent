@@ -189,7 +189,7 @@
 
 (defn run-server
   []
-  (rdv/init-views! view-system {:views views})
+  (rdv/init! view-system {:views views})
   (immutant/run handler {:port 8080}))
 
 (defn -main

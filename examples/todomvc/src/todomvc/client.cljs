@@ -167,7 +167,7 @@
 (defn ^:export run
   []
   ; Configure reagent-data-views and then BrowserChannel.
-  (rdv/configure!)
+  (rdv/init!)
 
   ; NOTE: We are passing in an empty map for the BrowserChannel event handlers only
   ;       because this todo app is not using BrowserChannel for any purpose other

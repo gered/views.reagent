@@ -22,7 +22,7 @@
 
 (def db {:classname   "org.postgresql.Driver"
          :subprotocol "postgresql"
-         :subname     "//10.0.0.20/class_registry"
+         :subname     "//localhost/class_registry"
          :user        "class_registry"
          :password    "s3cr3t"})
 

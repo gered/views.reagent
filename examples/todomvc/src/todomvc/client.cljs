@@ -3,8 +3,8 @@
     [reagent.core :as r]
     [ajax.core :refer [POST default-interceptors to-interceptor]]
     [net.thegeez.browserchannel.client :as browserchannel]
-    [reagent-data-views.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [reagent-data-views.browserchannel.client :as rdv]))
+    [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
+    [views.reagent.browserchannel.client :as vr]))
 
 ;; Todo MVC - Reagent Implementation
 ;;
@@ -90,7 +90,7 @@
 ;; Main TODO app component
 ;;
 ;; Note that this component is defined using 'defvc' instead of 'defn'. This is a
-;; macro provided by reagent-data-views which is required to be used by any Reagent
+;; macro provided by views.reagent which is required to be used by any Reagent
 ;; component that will directly subscribe/unsubscribe to views. It handles all the
 ;; housekeeping operations that working with views on the client entails.
 ;;
@@ -166,15 +166,15 @@
 
 (defn ^:export run
   []
-  ; Configure reagent-data-views and then BrowserChannel.
-  (rdv/init!)
+  ; Configure views.reagent and then BrowserChannel.
+  (vr/init!)
 
   ; NOTE: We are passing in an empty map for the BrowserChannel event handlers only
   ;       because this todo app is not using BrowserChannel for any purpose other
-  ;       then to provide client/server messaging for reagent-data-views. If we
+  ;       then to provide client/server messaging for views.reagent. If we
   ;       wanted to use it for client/server messaging in our application as well,
   ;       we could pass in any event handlers we want here and it would not intefere
-  ;       with reagent-data-views.
-  (browserchannel/connect! {} {:middleware [rdv/middleware]})
+  ;       with views.reagent.
+  (browserchannel/connect! {} {:middleware [vr/middleware]})
 
   (r/render-component [todo-app] (.getElementById js/document "app")))

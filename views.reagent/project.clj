@@ -1,6 +1,6 @@
-(defproject reagent-data-views "0.2.0-SNAPSHOT"
-  :description  "Support for Reagent components that get pushed realtime database updates from the server."
-  :url          "https://github.com/gered/reagent-data-views"
+(defproject views.reagent "0.2.0-SNAPSHOT"
+  :description  "Reagent support for the views library, allowing Reagent components to reactively re-render based on server-side changes."
+  :url          "https://github.com/gered/views.reagent"
   :license      {:name "MIT License"
                  :url  "http://opensource.org/licenses/MIT"}
 

@@ -1,11 +1,11 @@
-(ns reagent-data-views.client.component
+(ns views.reagent.client.component
   (:require
     [clojure.set :refer [difference]]
     [reagent.core :as r]
     [reagent.ratom :refer [RCursor]]
     [reagent.impl.component :refer [reagent-component?]]
-    [reagent-data-views.client.core :as rdv]
-    [reagent-data-views.client.utils :refer [update-component-state!]]))
+    [views.reagent.client.core :as rdv]
+    [views.reagent.client.utils :refer [update-component-state!]]))
 
 (defn unsubscribe-all!
   "Unsubscribes a component from all it's current view subscriptions.

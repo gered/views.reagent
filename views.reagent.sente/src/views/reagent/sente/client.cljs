@@ -1,6 +1,6 @@
-(ns reagent-data-views.sente.client
+(ns views.reagent.sente.client
   (:require
-    [reagent-data-views.client.core :as client]
+    [views.reagent.client.core :as client]
     [taoensso.sente :as sente]))
 
 (defonce ^:private send-buffer (atom []))

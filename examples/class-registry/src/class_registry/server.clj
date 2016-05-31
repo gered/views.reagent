@@ -16,7 +16,7 @@
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
-    [reagent-data-views.browserchannel.server :as rdv]))
+    [views.reagent.browserchannel.server :as vr]))
 
 (def dev? (boolean (env :dev)))
 
@@ -141,7 +141,7 @@
   []
   (html5
     [:head
-     [:title "Class Registry"]
+     [:title "Class Registry - views.reagent Example"]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
      (include-css
        "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
@@ -180,7 +180,7 @@
   (-> app-routes
       (wrap-restful-format :formats [:transit-json])
       (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
-      (wrap-browserchannel {} {:middleware [(rdv/->middleware view-system)]})
+      (wrap-browserchannel {} {:middleware [(vr/->middleware view-system)]})
       (wrap-immutant-async-adapter)))
 
 
@@ -189,7 +189,7 @@
 
 (defn run-server
   []
-  (rdv/init! view-system {:views views})
+  (vr/init! view-system {:views views})
   (immutant/run handler {:port 8080}))
 
 (defn -main

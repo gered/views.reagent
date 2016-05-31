@@ -1,4 +1,4 @@
-# Reagent Data Views Example - Class Registry
+# views.reagent Example - Class Registry
 
 This is a "Class Registry" application that has a lot of CRUD operations
 in it which allow users to manage students and professors, as well as
@@ -15,20 +15,20 @@ using parameters).
 Definitely take a look at the [TodoMVC][1] example app before diving into
 this and also be sure you're familiar with Reagent.
 
-[1]: https://github.com/gered/reagent-data-views/tree/master/examples/todomvc
+[1]: https://github.com/gered/views.reagent/tree/master/examples/todomvc
 
 ## Running
 
 ### A quick note on the dependencies used
 
-Since Reagent Data Views and the Views library it depends on are all
+Since views.reagent and the Views library it depends on are all
 currently in somewhat of an experimental / pre-beta state right now,
 you will need to first clone the following repositories and manually
 install the libraries via `lein install`:
 
 * [views](https://github.com/gered/views)
 * [views-sql](https://github.com/gered/views-sql)
-* [reagent-data-views](https://github.com/gered/reagent-data-views)
+* [views.reagent](https://github.com/gered/views.reagent)
 
 As well, you can install [views-honeysql](https://github.com/gered/views-honeysql)
 if you want to try out using HoneySQL instead of SQL with views. But

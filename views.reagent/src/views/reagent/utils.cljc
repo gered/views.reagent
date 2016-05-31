@@ -1,4 +1,4 @@
-(ns reagent-data-views.utils)
+(ns views.reagent.utils)
 
 (defn relevant-event?
   [data]

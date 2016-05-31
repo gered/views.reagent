@@ -1,11 +1,11 @@
-(ns reagent-data-views.browserchannel.server
+(ns views.reagent.browserchannel.server
   (:import
     (clojure.lang Atom))
   (:require
     [clojure.tools.logging :as log]
     [net.thegeez.browserchannel.server :as browserchannel]
     [views.core :as views]
-    [reagent-data-views.server.core :as server]))
+    [views.reagent.server.core :as server]))
 
 (defn- views-send-fn
   [client-id [view-sig view-data]]
@@ -14,14 +14,14 @@
 
 (defn init!
   "initializes the views system and adds browserchannel-specific configuration
-   to it to enable the necessary hooks into reagent-data-views.
+   to it to enable the necessary hooks into views.reagent.
    this function acts as a direct replacement to calling views.core/init!, so
-   are able to initialize both views and reagent-data-views by calling this
+   are able to initialize both views and views.reagent by calling this
    function. the arguments and return value are the same as in views.core/init!
    so see that function for more information.
 
    one additional option :context-fn can be specified which is a function
-   that accepts an initial context map created by reagent-data-views and
+   that accepts an initial context map created by views.reagent and
    allows your application to add any information necessary to the context
    passed to various view system functions (such as auth-fn, namespace-fn, etc)."
   ([^Atom view-system options]
@@ -34,7 +34,7 @@
 
 (defn ->middleware
   "returns clj-browserchannel server-side event middleware for injecting
-   reagent-data-views handling into the clj-browserchannel client session
+   views.reagent handling into the clj-browserchannel client session
    lifecycle handling. simply include the returned middleware map in your
    Ring handler's wrap-browserchannel options."
   [^Atom view-system]

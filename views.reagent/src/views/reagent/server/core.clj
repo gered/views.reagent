@@ -1,10 +1,10 @@
-(ns reagent-data-views.server.core
+(ns views.reagent.server.core
   (:import
     (clojure.lang Atom))
   (:require
     [clojure.tools.logging :as log]
     [views.core :as views]
-    [reagent-data-views.utils :refer [relevant-event?]]))
+    [views.reagent.utils :refer [relevant-event?]]))
 
 (defn- handle-subscriptions!
   [^Atom view-system client-id view-sig context]
@@ -18,7 +18,7 @@
 
 (defn- update-context
   [^Atom view-system existing-context]
-  (if-let [context-fn (get-in @view-system [:reagent-data-views :context-fn])]
+  (if-let [context-fn (get-in @view-system [:reagent :context-fn])]
     (context-fn existing-context)
     existing-context))
 
@@ -43,5 +43,5 @@
 
 (defn set-context-fn!
   [^Atom view-system f]
-  (swap! view-system assoc-in [:reagent-data-views :context-fn] f)
+  (swap! view-system assoc-in [:reagent :context-fn] f)
   view-system)

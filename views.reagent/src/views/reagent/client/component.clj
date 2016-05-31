@@ -1,4 +1,4 @@
-(ns reagent-data-views.client.component)
+(ns views.reagent.client.component)
 
 (defmacro defvc
   "Defines a Reagent component that works the same as any other defined
@@ -30,26 +30,26 @@
        (reagent.core/create-class
          {:component-will-mount
           (fn [this#]
-            (reagent-data-views.client.component/prepare-for-render! this#))
+            (views.reagent.client.component/prepare-for-render! this#))
 
           :component-did-mount
           (fn [this#]
             ; invoked immediately after the initial render has occurred.
             ; we do this here because component-did-mount does not get called
             ; after the initial render, but will be after all subsequent renders.
-            (reagent-data-views.client.component/update-subscriptions! this#))
+            (views.reagent.client.component/update-subscriptions! this#))
 
           :component-will-unmount
           (fn [this#]
-            (reagent-data-views.client.component/unsubscribe-all! this#))
+            (views.reagent.client.component/unsubscribe-all! this#))
 
           :component-will-receive-props
           (fn [this# new-argv#]
-            (reagent-data-views.client.component/prepare-for-render! this#))
+            (views.reagent.client.component/prepare-for-render! this#))
 
           :component-did-update
           (fn [this# old-argv#]
-            (reagent-data-views.client.component/update-subscriptions! this#))
+            (views.reagent.client.component/update-subscriptions! this#))
 
           :component-function
           (fn ~args

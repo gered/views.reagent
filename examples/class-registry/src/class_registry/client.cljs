@@ -4,10 +4,10 @@
     [reagent.core :as r]
     [ajax.core :refer [POST default-interceptors to-interceptor]]
     [net.thegeez.browserchannel.client :as browserchannel]
-    [reagent-data-views.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [reagent-data-views.browserchannel.client :as rdv]))
+    [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
+    [views.reagent.browserchannel.client :as vr]))
 
-;; Class Registry - Reagent Data Views example app
+;; Class Registry - views.reagent example app
 ;;
 ;; (This example app is (very) loosely based on one of the examples in the Om tutorial).
 ;;
@@ -350,7 +350,7 @@
   "main application container"
   []
   [:div.container-fluid
-   [:h1#app-title.page-header "Class Registry " [:small "Reagent Data Views Example"]]
+   [:h1#app-title.page-header "Class Registry " [:small "views.reagent Example"]]
    [:div.row
     [:div.col-sm-6 [people]]
     [:div.col-sm-6 [classes]]]])
@@ -376,7 +376,7 @@
 
 (defn ^:export run
   []
-  (rdv/init!)
-  (browserchannel/connect! {} {:middleware [rdv/middleware]})
+  (vr/init!)
+  (browserchannel/connect! {} {:middleware [vr/middleware]})
 
   (r/render-component [class-registry-app] (.getElementById js/document "app")))

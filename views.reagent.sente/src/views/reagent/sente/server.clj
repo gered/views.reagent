@@ -1,10 +1,10 @@
-(ns reagent-data-views.sente.server
+(ns views.reagent.sente.server
   (:import
     (clojure.lang Atom))
   (:require
     [clojure.tools.logging :as log]
     [views.core :as views]
-    [reagent-data-views.server.core :as server]
+    [views.reagent.server.core :as server]
     [taoensso.sente :as sente]))
 
 (defn- views-send-fn

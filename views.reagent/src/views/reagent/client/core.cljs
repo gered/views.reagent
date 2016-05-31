@@ -1,7 +1,7 @@
-(ns reagent-data-views.client.core
+(ns views.reagent.client.core
   (:require
     [reagent.core :as r]
-    [reagent-data-views.utils :refer [relevant-event?]]))
+    [views.reagent.utils :refer [relevant-event?]]))
 
 (defonce ^:private first-connection? (atom true))
 
@@ -20,7 +20,7 @@
    for the view corresponding with the view-sig.
 
    Generally, for code in a component's render function, you should use
-   reagent-data-views.client.component/view-cursor instead of using this
+   views.reagent.client.component/view-cursor instead of using this
    function directly. Use of this function instead requires you to manage
    view subscription/unsubscription yourself.
 

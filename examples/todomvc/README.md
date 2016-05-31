@@ -1,4 +1,4 @@
-# Reagent Data Views Example - Todo MVC
+# views.reagent Example - Todo MVC
 
 This is a modification of the Todo MVC app for Reagent [demonstrated here][1].
 This version of the app has been modified to use a PostgreSQL database
@@ -11,14 +11,14 @@ to that data to any number of users currently viewing the app.
 
 ### A quick note on the dependencies used
 
-Since Reagent Data Views and the Views library it depends on are all
+Since views.reagent and the Views library it depends on are all
 currently in somewhat of an experimental / pre-beta state right now,
 you will need to first clone the following repositories and manually
 install the libraries via `lein install`:
 
 * [views](https://github.com/gered/views)
 * [views-sql](https://github.com/gered/views-sql)
-* [reagent-data-views](https://github.com/gered/reagent-data-views)
+* [views.reagent](https://github.com/gered/views.reagent)
 
 As well, you can install [views-honeysql](https://github.com/gered/views-honeysql)
 if you want to try out using HoneySQL instead of SQL with views. But

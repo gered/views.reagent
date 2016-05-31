@@ -1,4 +1,4 @@
-(ns reagent-data-views.client.utils
+(ns views.reagent.client.utils
   (:require
     [reagent.core :as r]
     [reagent.impl.component :refer [reagent-component?]]))

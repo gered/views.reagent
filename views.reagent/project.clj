@@ -1,4 +1,4 @@
-(defproject views.reagent "0.2.0-SNAPSHOT"
+(defproject gered/views.reagent "0.2.0-SNAPSHOT"
   :description  "Reagent support for the views library, allowing Reagent components to reactively re-render based on server-side changes."
   :url          "https://github.com/gered/views.reagent"
   :license      {:name "MIT License"

@@ -6,8 +6,8 @@
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
     [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
-    [taoensso.sente :as sente]
-    [taoensso.sente.server-adapters.immutant :refer [sente-web-server-adapter]]
+    [net.thegeez.browserchannel.server :refer [wrap-browserchannel]]
+    [net.thegeez.browserchannel.immutant-async-adapter :refer [wrap-immutant-async-adapter]]
     [immutant.web :as immutant]
     [hiccup.page :refer [html5 include-css include-js]]
     [hiccup.element :refer [javascript-tag]]
@@ -15,7 +15,7 @@
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
-    [views.reagent.sente.server :as vr]))
+    [views.reagent.browserchannel.server :as vr]))
 
 (def dev? (boolean (env :dev)))
 
@@ -27,19 +27,10 @@
 
 
 
-;; Sente socket
-;;
-;; This just holds the socket map returned by sente's make-channel-socket!
-;; so we can refer to it and pass it around as needed.
-
-(defonce sente-socket (atom {}))
-
-
-
 ;; View system atom
 ;;
 ;; We just declare it, don't need to fill it with anything. The call below to
-;; views.reagent.sente.server/init! will take care of initializing it.
+;; views.reagent.browserchannel.server/init! will take care of it.
 
 (defonce view-system (atom {}))
 
@@ -155,41 +146,24 @@
     (POST "/todos/mark-all" [done?]   (mark-all! (Boolean/parseBoolean done?)))
     (POST "/todos/delete-all-done" [] (delete-all-done!))
 
-    ; sente routes
-    (GET  "/chsk" request ((:ajax-get-or-ws-handshake-fn @sente-socket) request))
-    (POST "/chsk" request ((:ajax-post-fn @sente-socket) request))
-
     ; main page
     (GET "/" [] (render-page))
 
     (route/resources "/")
     (route/not-found "not found")))
 
+; NOTE: We are passing in an empty event handler map to wrap-browserchannel only
+;       because this todo app is not using BrowserChannel for any purpose other
+;       then to provide client/server messaging for views.reagent. If we
+;       wanted to use it for client/server messaging in our application as well,
+;       we could pass in any event handlers we want here and it would not intefere
+;       with views.reagent.
+
 (def handler
   (-> app-routes
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))))
-
-
-
-;; Sente event/message handler
-;;
-;; Note that if you're only using Sente to make use of views.reagent in your app
-;; and aren't otherwise using it for any other client/server messaging, you can
-;; set :use-default-sente-router? to true in the options passed to
-;; views.reagent.sente.server/init! (called in run-server below). Then you will
-;; not need to provide a handler like this to start-chsk-router! as one will be
-;; provided automatically.
-
-(defn sente-event-msg-handler
-  [{:keys [event id uid client-id] :as ev}]
-  (if (= id :chsk/uidport-close)
-    (vr/on-close! view-system ev)
-    (when-not (vr/on-receive! view-system ev)
-      ; on-receive! returns true if the event was a views.reagent event and it
-      ; handled it.
-      ;
-      ; you could put your code to handle your app's own events here
-      )))
+      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
+      (wrap-browserchannel {} {:middleware [(vr/->middleware view-system)]})
+      (wrap-immutant-async-adapter)))
 
 
 
@@ -197,30 +171,15 @@
 
 (defn run-server
   []
-  ; sente setup. create the socket, storing it in an atom and set up a event
-  ; handler using sente's own message router functionality.
-  ; in this example app we are setting up sente user-id's to just be the
-  ; client-id, but you can obviously set this up however you wish.
-  (reset! sente-socket
-          (sente/make-channel-socket!
-            sente-web-server-adapter
-            {:user-id-fn (fn [request] (get-in request [:params :client-id]))}))
-
-  ; set up a handler for sente events
-  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
-
-  ; views.reagent.sente.server/init! takes care of two things for us:
+  ; views.reagent.browserchannel.server/init! takes care of initialization of views
+  ; and views.reagent at the same time. As a result, we do not need to also call
+  ; views.core/init! anywhere. The same arguments and options you are able to pass to
+  ; views.core/init! can also be passed in here and they will be forwarded along, as
+  ; this function is intended to be a drop-in replacement for views.core/init!.
   ;
-  ;  1. initialization of the base views system
-  ;  2. customization of views system config for use with sente
-  ;
-  ; As a result, we do not also need to call views.core/init! anywhere, as
-  ; this performs the exact same function and also accepts the same arguments
-  ; and options -- see the docs for views.core/init! for more info.
-  ;
-  ; If you need to shutdown the views system (e.g. if you're using something like
+  ; if you need to shutdown the views system (e.g. if you're using something like
   ; Component or Mount), you can just call views.core/shutdown!.
-  (vr/init! view-system @sente-socket {:views views})
+  (vr/init! view-system {:views views})
 
   (immutant/run handler {:port 8080}))
 

@@ -8,12 +8,11 @@
 
                   [org.clojure/java.jdbc "0.6.1"]
                   [org.postgresql/postgresql "9.4.1208.jre7"]
-                  [gered/clj-browserchannel "0.3.2"]
-                  [gered/clj-browserchannel-immutant-adapter "0.0.3"]
+                  [com.taoensso/sente "1.8.1"]
                   [gered/views "1.5-SNAPSHOT"]
                   [gered/views.sql "0.1.0-SNAPSHOT"]
                   [gered/views.reagent "0.2.0-SNAPSHOT"]
-                  [gered/views.reagent.browserchannel "0.1.0-SNAPSHOT"]
+                  [gered/views.reagent.sente "0.1.0-SNAPSHOT"]
 
                   [hiccup "1.0.5"]
                   [reagent "0.6.0-alpha2"]

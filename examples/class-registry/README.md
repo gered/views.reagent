@@ -12,7 +12,7 @@ to the user. While the code is longer as a result, this still serves
 as a more interesting example with several views being used (some
 using parameters).
 
-Definitely take a look at the [TodoMVC][1] example app before diving into
+Definitely take a look at the [Todo MVC][1] example app before diving into
 this and also be sure you're familiar with Reagent.
 
 [1]: https://github.com/gered/views.reagent/tree/master/examples/todomvc
@@ -27,10 +27,10 @@ you will need to first clone the following repositories and manually
 install the libraries via `lein install`:
 
 * [views](https://github.com/gered/views)
-* [views-sql](https://github.com/gered/views-sql)
+* [views.sql](https://github.com/gered/views.sql)
 * [views.reagent](https://github.com/gered/views.reagent)
 
-As well, you can install [views-honeysql](https://github.com/gered/views-honeysql)
+As well, you can install [views.honeysql](https://github.com/gered/views.honeysql)
 if you want to try out using HoneySQL instead of SQL with views. But
 this example app does not use it so it's not required.
 

@@ -7,8 +7,8 @@
     [ring.middleware.format :refer [wrap-restful-format]]
     [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
-    [net.thegeez.browserchannel.server :refer [wrap-browserchannel]]
-    [net.thegeez.browserchannel.immutant-async-adapter :refer [wrap-immutant-async-adapter]]
+    [taoensso.sente :as sente]
+    [taoensso.sente.server-adapters.immutant :refer [sente-web-server-adapter]]
     [immutant.web :as immutant]
     [hiccup.page :refer [html5 include-css include-js]]
     [hiccup.element :refer [javascript-tag]]
@@ -16,7 +16,7 @@
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
-    [views.reagent.browserchannel.server :as vr]))
+    [views.reagent.sente.server :as vr]))
 
 (def dev? (boolean (env :dev)))
 
@@ -27,6 +27,10 @@
          :password    "s3cr3t"})
 
 
+
+;; Sente socket
+
+(defonce sente-socket (atom {}))
 
 ;; View system atom
 
@@ -176,12 +180,42 @@
     (route/resources "/")
     (route/not-found "not found")))
 
+
+;; Ring middleware to intercept requests to Sente's channel socket routes
+;;
+;; Because our ring handler below is also using wrap-restful-format, we need to make
+;; sure we catch requests intended to Sente before wrap-restful-format has a chance to
+;; modify any of the request params our we'll get errors.
+;; This is obviously not the only approach to handling this problem, but it is one that
+;; I personally find nice, easy and flexible.
+
+(defn wrap-sente
+  [handler uri]
+  (fn [request]
+    (let [uri-match? (.startsWith (str (:uri request)) uri)
+          method     (:request-method request)]
+      (cond
+        (and uri-match? (= :get method))  ((:ajax-get-or-ws-handshake-fn @sente-socket) request)
+        (and uri-match? (= :post method)) ((:ajax-post-fn @sente-socket) request)
+        :else                             (handler request)))))
+
 (def handler
   (-> app-routes
       (wrap-restful-format :formats [:transit-json])
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))
-      (wrap-browserchannel {} {:middleware [(vr/->middleware view-system)]})
-      (wrap-immutant-async-adapter)))
+      (wrap-sente "/chsk")
+      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))))
+
+
+
+;; Sente event/message handler
+
+(defn sente-event-msg-handler
+  [{:keys [event id uid client-id] :as ev}]
+  (if (= id :chsk/uidport-close)
+    (vr/on-close! view-system ev)
+    (when-not (vr/on-receive! view-system ev)
+      ; TODO: any code here needed to handle app-specific receive events
+      )))
 
 
 
@@ -189,7 +223,14 @@
 
 (defn run-server
   []
-  (vr/init! view-system {:views views})
+  (reset! sente-socket
+          (sente/make-channel-socket!
+            sente-web-server-adapter
+            {:user-id-fn (fn [request] (get-in request [:params :client-id]))}))
+  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+
+  (vr/init! view-system @sente-socket {:views views})
+
   (immutant/run handler {:port 8080}))
 
 (defn -main

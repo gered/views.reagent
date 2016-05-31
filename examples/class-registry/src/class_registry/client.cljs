@@ -3,9 +3,9 @@
     [clojure.string :as string]
     [reagent.core :as r]
     [ajax.core :refer [POST default-interceptors to-interceptor]]
-    [net.thegeez.browserchannel.client :as browserchannel]
+    [taoensso.sente :as sente]
     [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [views.reagent.browserchannel.client :as vr]))
+    [views.reagent.sente.client :as vr]))
 
 ;; Class Registry - views.reagent example app
 ;;
@@ -20,6 +20,12 @@
 ;; serve to demonstrate how you can very quickly build UI's which reactively update to
 ;; backend database operations and get a lot of "free" UI refreshes, simplifying your
 ;; code.
+
+
+
+;; Sente socket
+
+(defonce sente-socket (atom {}))
 
 
 
@@ -372,11 +378,30 @@
 
 
 
+;; Sente event/message handler
+
+(defn sente-event-msg-handler
+  [{:keys [event id client-id] :as ev}]
+  (let [[ev-id ev-data] event]
+    (cond
+      (and (= :chsk/state ev-id)
+           (:open? ev-data))
+      (vr/on-open! @sente-socket ev)
+
+      (= :chsk/recv id)
+      (when-not (vr/on-receive! @sente-socket ev)
+        ; TODO: any code here needed to handle app-specific receive events
+        ))))
+
+
+
 ;; Page load
 
 (defn ^:export run
   []
-  (vr/init!)
-  (browserchannel/connect! {} {:middleware [vr/middleware]})
+  (reset! sente-socket (sente/make-channel-socket! "/chsk" {}))
+  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+
+  (vr/init! @sente-socket {})
 
   (r/render-component [class-registry-app] (.getElementById js/document "app")))

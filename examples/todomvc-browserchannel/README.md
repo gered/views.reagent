@@ -1,4 +1,4 @@
-# views.reagent Example - Todo MVC
+# views.reagent Example - Todo MVC (BrowserChannel)
 
 This is a modification of the Todo MVC app for Reagent [demonstrated here][1].
 This version of the app has been modified to use a PostgreSQL database
@@ -6,6 +6,13 @@ to store the Todos and to provide realtime synchronization of changes
 to that data to any number of users currently viewing the app.
 
 [1]: http://reagent-project.github.io/
+
+> **NOTE:** This is a copy of the [other Todo MVC example][2] and is the same
+> in every respect, except that this one is using [BrowserChannel][3] instead of
+> Sente as the underlying client/server messaging implementation.
+
+[2]: https://github.com/gered/views.reagent/tree/master/examples/todomvc
+[3]: https://github.com/gered/views.reagent/tree/master/views.reagent.browserchannel
 
 ## Running
 

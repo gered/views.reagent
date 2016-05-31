@@ -2,11 +2,11 @@
   (:require
     [reagent.core :as r]
     [ajax.core :refer [POST default-interceptors to-interceptor]]
-    [taoensso.sente :as sente]
+    [net.thegeez.browserchannel.client :as browserchannel]
     [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
-    [views.reagent.sente.client :as vr]))
+    [views.reagent.browserchannel.client :as vr]))
 
-;; Todo MVC - Reagent Implementation
+;; Todo MVC - views.reagent example app
 ;;
 ;; This is taken from the example code shown on http://reagent-project.github.io/
 ;; It has been modified so that instead of using todo data stored client-side in
@@ -16,15 +16,6 @@
 ;; whenever a change is made (by any client currently viewing the app) by a
 ;; view subscription. See the 'todo-app' component near the bottom-middle of this
 ;; file for more details about this.
-
-
-
-;; Sente socket
-;;
-;; This just holds the socket map returned by sente's make-channel-socket!
-;; so we can refer to it and pass it around as needed.
-
-(defonce sente-socket (atom {}))
 
 
 
@@ -171,45 +162,19 @@
 
 
 
-;; Sente event/message handler
-;;
-;; Note that if you're only using Sente to make use of views.reagent in your app
-;; and aren't otherwise using it for any other client/server messaging, you can
-;; set :use-default-sente-router? to true in the options passed to
-;; views.reagent.sente.client/init! (called in run below). Then you will not
-;; need to provide a handler like this to start-chsk-router! as one will be
-;; provided automatically.
-
-(defn sente-event-msg-handler
-  [{:keys [event id client-id] :as ev}]
-  (let [[ev-id ev-data] event]
-    (cond
-      (and (= :chsk/state ev-id)
-           (:open? ev-data))
-      (vr/on-open! @sente-socket ev)
-
-      (= :chsk/recv id)
-      (when-not (vr/on-receive! @sente-socket ev)
-        ; on-receive! returns true if the event was a views.reagent event and it
-        ; handled it.
-        ;
-        ; you could put your code to handle your app's own events here
-        ))))
-
-
-
 ;; Page load
 
 (defn ^:export run
   []
-  ; Sente setup. create the socket, storing it in an atom and set up a event
-  ; handler using sente's own message router functionality.
-  (reset! sente-socket (sente/make-channel-socket! "/chsk" {}))
+  ; Initialize views.reagent
+  (vr/init!)
 
-  ; set up a handler for sente events
-  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
-
-  ; Configure views.reagent for use with Sente.
-  (vr/init! @sente-socket {})
+  ; Initialize BrowserChannel
+  ; NOTE: We are passing in an empty event handler map to connect! only because
+  ;       this todo app is not using BrowserChannel for any purpose other then to
+  ;       provide client/server messaging for views.reagent. If we wanted to use it
+  ;       for client/server messaging in our application as well, we could pass in
+  ;       any event handlers we want here and it would not intefere with views.reagent.
+  (browserchannel/connect! {} {:middleware [vr/middleware]})
 
   (r/render-component [todo-app] (.getElementById js/document "app")))

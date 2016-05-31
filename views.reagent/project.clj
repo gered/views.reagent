@@ -6,9 +6,15 @@
 
   :dependencies [[org.clojure/tools.logging "0.3.1"]]
 
+  :plugins      [[lein-cljsbuild "1.1.3"]]
+
   :profiles     {:provided
                  {:dependencies
                   [[org.clojure/clojure "1.8.0"]
                    [org.clojure/clojurescript "1.8.51"]
                    [reagent "0.6.0-alpha"]
-                   [gered/views "1.5-SNAPSHOT"]]}})
+                   [gered/views "1.5-SNAPSHOT"]]}}
+
+  :cljsbuild    {:builds
+                 {:main
+                  {:source-paths ["src"]}}})

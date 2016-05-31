@@ -6,6 +6,8 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]]
 
+  :plugins      [[lein-cljsbuild "1.1.3"]]
+
   :profiles     {:provided
                  {:dependencies
                   [[org.clojure/clojure "1.8.0"]
@@ -13,4 +15,8 @@
                    [reagent "0.6.0-alpha"]
                    [gered/views "1.5-SNAPSHOT"]
                    [gered/views.reagent "0.2.0-SNAPSHOT"]
-                   [gered/clj-browserchannel "0.3.1"]]}})
+                   [gered/clj-browserchannel "0.3.1"]]}}
+
+  :cljsbuild    {:builds
+                 {:main
+                  {:source-paths ["src"]}}})

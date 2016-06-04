@@ -304,6 +304,14 @@ views.reagent recognized and handled the message as a view refresh
 event. See `views.reagent.utils/relevant-event?` for how it recognizes
 relevant messages.
 
+You also need to provide a function to send messages to the server.
+You can set this function by directly using `reset!` on the atom
+`views.reagent.client/send-fn`. The function should take a single
+argument which is the data to be sent.
+
+You should take care to hook up all of these integration points before
+the first Reagent component is rendered at page load.
+
 ## License
 
 Copyright © 2016 Gered King

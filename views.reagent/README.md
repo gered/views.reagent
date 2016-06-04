@@ -30,7 +30,7 @@ Usage of this library is incredibly simple once you have a working
 views system up and running.
 
 Initialization of the views system is typically either done directly 
-view `views.core/init!` with some special configuration for whatever 
+via `views.core/init!` with some special configuration for whatever 
 client/server messaging plugin you're using, or you may be required to
 call a special "init" function provided by the plugin library to use 
 instead of `views.core/init!`.
@@ -93,9 +93,11 @@ So, how do we create a view cursor?
 
 Given the previously set up view system on the server, this is all the
 UI code necessary to subscribe to the `:todos` view and retrieve and 
-render the Todos list on the client. The client will automatically 
-unsubscribe from the `:todos` view when the `my-todos-list` component
-is unmounted.
+render the Todos list on the client. Whenever the `:todos` view is
+refreshed on the server, the client will receive the data automatically
+and the component will rerender since it is dereferencing the views
+cursor. Finally, the client will automatically unsubscribe from the 
+`:todos` view when the `my-todos-list` component is unmounted.
 
 At first glance, `my-todos-list` looks just like any other normal 
 Reagent component. However a very important difference is the use of 
@@ -112,7 +114,8 @@ components within which you want to use `view-cursor`.
 first the view data returned will be `nil` since obviously the client 
 must first wait for the subscription to be processed by the server and
 then for the server to send back the initial view data. Once this 
-happens the component will automatically rerender as you would expect.
+happens the component will automatically rerender as you would expect 
+(showing the list of todos).
 
 You can check if the view cursor is still waiting on the initial set of
 data through the use of the `loading?` function. This can be used to 
@@ -132,8 +135,11 @@ prefer not to render empty data when components first load.
           @todos)])))
 ```
 
-Remember that `loading?` only checks if the view cursor is waiting on 
-the **initial** view data. Once that first set of data is received, 
+Note that `loading?` should be passed the actual Reagent cursor that
+`view-cursor` returns, not the dereferenced result.
+
+Also remember that `loading?` only checks if the view cursor is waiting
+on the **initial** view data. Once that first set of data is received, 
 `loading?` will always return false. There is no current method in 
 views.reagent for determining if a view refresh is pending, although 
 this is typically somewhat of a less drastic UI change to the user so 
@@ -171,7 +177,7 @@ Letting us do any of these on the client:
 ```clj
 (view-cursor :todos)            ; return all todos
 (view-cursor :todos true)       ; only completed
-(view-cursor :todos false)      ; only uncompleted
+(view-cursor :todos false)      ; only un-completed
 ```
 
 #### View Cursors Are Intended To Be Read-only
@@ -180,10 +186,10 @@ Even though a Reagent cursor allows you to update them as well as read
 from them, updating a view cursor doesn't do anything. Nothing stops 
 you from doing this, but updating a view cursor does not propagate 
 changes to the server or anything like that. In addition, you will lose
-any changes you make every time a view refresh is received.
+any changes you make every time a view refresh is received as the data
+gets blindly replaced.
 
-It is highly recommended that you do not write code that updates a view
-cursor.
+It is recommended that you do not write code that updates a view cursor.
 
 ## Advanced Topics
 
@@ -212,15 +218,15 @@ Reagent components. I do not recommend this though.
 ```
 
 When using these low-level functions, you need to specify view 
-signature maps (aka "view sigs") to refer to the views you want to use.
-Also note that unlike the server-side view signatures that you may be 
-familiar with from the views library, these client-side view signatures
-never have a `:namespace` in them. Even if you include one, it is 
-disregarded by the server.
+signature maps (a.k.a. "view sigs") to refer to the views you want to 
+use. Also note that unlike the server-side view signatures that you may
+be familiar with from the views library, these client-side view
+signatures never have a `:namespace` in them. Even if you include one,
+it is disregarded by the server.
 
 Also note that `subscribe!` and `unsubscribe!` both take a list of view
-signatures (aka. view sigs), so you can subscribe and unsubscribe from
-multiple views at once.
+signatures, so you can subscribe and unsubscribe from multiple views at
+once.
 
 I do not recommend mixing use of these low-level functions and using 
 `defvc` components. You should probably pick one or the other and stick
@@ -240,12 +246,12 @@ In the views library, a bunch of functions take a "subscriber key."
 This is an arbitrary value that uniquely identifies a subscriber. There
 can of course be multiple views for each subscriber key. Said another 
 way: someone (uniquely identified by the subscriber key) can be 
-subscribed to multiple views at the same time.
+subscribed to multiple different views at the same time.
 
 You will typically want to use the underlying client/server library's
 "client/user connection ID" as the subscriber key. For Sente this is 
 the "user id" or the "client id" (depending on your application), and 
-for BrowserChannel this is the BrowserChannel "session id."
+for clj-browserchannel this is the BrowserChannel "session id."
 
 #### View System Configuration
 

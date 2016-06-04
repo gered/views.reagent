@@ -5,6 +5,7 @@
 [1]: https://github.com/reagent-project/reagent
 [2]: https://github.com/gered/views
 
+
 ## Usage
 
 This library is made up of two core parts:
@@ -15,11 +16,13 @@ This library is made up of two core parts:
 [3]: https://github.com/ptaoussanis/sente
 [4]: https://github.com/gered/clj-browserchannel
 
+
 ### Main Library Documentation
 
 [See here for full documentation.][5]
 
 [5]: https://github.com/gered/views.reagent/tree/master/views.reagent
+
 
 ### Client/Server Plugin Documentation
 
@@ -28,6 +31,18 @@ This library is made up of two core parts:
 
 [6]: https://github.com/gered/views.reagent/tree/master/views.reagent.sente
 [7]: https://github.com/gered/views.reagent/tree/master/views.reagent.browserchannel
+
+
+### Examples
+
+There are two example applications for you to look at to see a fully working web application with working views system configured and working.
+
+* Todo MVC. There are two versions of this that are both largely identical except that [one uses Sente][8] and the [other uses BrowserChannel][9].
+* [Class Registry][10]. This is a somewhat more complex application with a busy UI showing a bunch of data at once, but it does serve to show how a UI can be built from multiple different views at once. This example app uses Sente.
+
+[8]: https://github.com/gered/views.reagent/tree/master/examples/todomvc
+[9]: https://github.com/gered/views.reagent/tree/master/examples/todomvc-browserchannel
+[10]: https://github.com/gered/views.reagent/tree/master/examples/class-registry
 
 
 ### Notes

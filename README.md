@@ -16,6 +16,8 @@ This library is made up of two core parts:
 [3]: https://github.com/ptaoussanis/sente
 [4]: https://github.com/gered/clj-browserchannel
 
+To use views.reagent in your application, you need to add both the main library and one client/server communications plugin library as dependencies. See their respective pages linked to below for more information on doing this.
+
 
 ### Main Library Documentation
 

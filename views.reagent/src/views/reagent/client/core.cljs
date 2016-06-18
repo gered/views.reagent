@@ -36,7 +36,7 @@
          (fn [view-data]
            (if (contains? view-data view-sig)
              (update-in view-data [view-sig] assoc
-                        :loading false
+                        :loading? false
                         :data data)
              view-data))))
 

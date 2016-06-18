@@ -13,7 +13,7 @@ understanding and usage of views.reagent.
 ## Leiningen
 
 ```clj
-[gered/views.reagent "0.2.0-SNAPSHOT"]
+[gered/views.reagent "0.2.1-SNAPSHOT"]
 ```
 
 ## Usage

@@ -1,4 +1,4 @@
-(defproject gered/views.reagent.browserchannel "0.1"
+(defproject gered/views.reagent.browserchannel "0.2-SNAPSHOT"
   :description  "BrowserChannel client/server messaging adapter for views.reagent."
   :url          "https://github.com/gered/views.reagent"
   :license      {:name "MIT License"

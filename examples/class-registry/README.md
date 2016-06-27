@@ -19,21 +19,6 @@ this and also be sure you're familiar with Reagent.
 
 ## Running
 
-### A quick note on the dependencies used
-
-Since views.reagent and the Views library it depends on are all
-currently in somewhat of an experimental / pre-beta state right now,
-you will need to first clone the following repositories and manually
-install the libraries via `lein install`:
-
-* [views](https://github.com/gered/views)
-* [views.sql](https://github.com/gered/views.sql)
-* [views.reagent](https://github.com/gered/views.reagent)
-
-As well, you can install [views.honeysql](https://github.com/gered/views.honeysql)
-if you want to try out using HoneySQL instead of SQL with views. But
-this example app does not use it so it's not required.
-
 ### Creating the Database
 
 This example app uses a PostgreSQL database. The SQL script to create

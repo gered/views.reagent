@@ -13,8 +13,8 @@
                   [[org.clojure/clojure "1.10.3"]
                    [org.clojure/clojurescript "1.10.773"]
                    [reagent "1.1.0"]
-                   [net.gered/views "1.6-SNAPSHOT"]
-                   [net.gered/views.reagent "0.2-SNAPSHOT"]
+                   [net.gered/views "1.6.0"]
+                   [net.gered/views.reagent "0.2.0"]
                    [com.taoensso/sente "1.16.2"]]}}
 
   :cljsbuild    {:builds

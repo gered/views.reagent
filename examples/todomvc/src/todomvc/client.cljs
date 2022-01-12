@@ -1,7 +1,8 @@
 (ns todomvc.client
   (:require
     [reagent.core :as r]
-    [ajax.core :refer [POST default-interceptors to-interceptor]]
+    [reagent.dom :as rdom]
+    [ajax.core :as ajax]
     [taoensso.sente :as sente]
     [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
     [views.reagent.sente.client :as vr]))
@@ -30,13 +31,13 @@
 
 ;; AJAX operations
 
-(defn add-todo [text]  (POST "/todos/add" {:format :url :params {:title text}}))
-(defn toggle [id]      (POST "/todos/toggle" {:format :url :params {:id id}}))
-(defn save [id title]  (POST "/todos/update" {:format :url :params {:id id :title title}}))
-(defn delete [id]      (POST "/todos/delete" {:format :url :params {:id id}}))
+(defn add-todo [text]  (ajax/POST "/todos/add" {:format :url :params {:title text}}))
+(defn toggle [id]      (ajax/POST "/todos/toggle" {:format :url :params {:id id}}))
+(defn save [id title]  (ajax/POST "/todos/update" {:format :url :params {:id id :title title}}))
+(defn delete [id]      (ajax/POST "/todos/delete" {:format :url :params {:id id}}))
 
-(defn complete-all [v] (POST "/todos/mark-all" {:format :url :params {:done? v}}))
-(defn clear-done []    (POST "/todos/delete-all-done"))
+(defn complete-all [v] (ajax/POST "/todos/mark-all" {:format :url :params {:done? v}}))
+(defn clear-done []    (ajax/POST "/todos/delete-all-done"))
 
 
 
@@ -51,7 +52,7 @@
                (if-not (empty? v) (on-save v))
                (stop))]
     (fn [props]
-      [:input (merge props
+      [:input (merge (dissoc props :on-save)
                      {:type "text" :value @val :on-blur save
                       :on-change #(reset! val (-> % .-target .-value))
                       :on-key-down #(case (.-which %)
@@ -60,7 +61,7 @@
                                      nil)})])))
 
 (def todo-edit (with-meta todo-input
-                          {:component-did-mount #(.focus (r/dom-node %))}))
+                          {:component-did-mount #(.focus (rdom/dom-node %))}))
 
 (defn todo-stats
   [{:keys [filt active done]}]
@@ -94,6 +95,24 @@
                      :on-save #(save id %)
                      :on-stop #(reset! editing false)}])])))
 
+
+(defn debug-component
+  []
+  [:div
+   [:div "sente-socket" [:pre (pr-str (:state @sente-socket))]]
+   [:div "send-fn" [:pre (pr-str @views.reagent.client.core/send-fn)]]
+   [:div "view-data" [:pre (pr-str @views.reagent.client.core/view-data)]]
+   [:div [:button {:on-click (fn [e]
+                               (println "sending event directly via sente-socket...")
+                               ((:send-fn @sente-socket) [:event/foo "foobar!"]))}
+          "send direct!"]]
+   [:div [:button {:on-click (fn [e]
+                               (println "sending event via send-data! ...")
+                               (views.reagent.client.core/send-data! [:event/foo "foobar!"]))}
+          "send via send-data!"]]
+   [:div [:button {:on-click (fn [e]
+                               (println (:state @sente-socket)))}
+          "current state"]]])
 
 
 ;; Main TODO app component
@@ -155,22 +174,6 @@
 
 
 
-;; Some unfortunately necessary set up to ensure we send the CSRF token back with
-;; AJAX requests
-
-(defn get-anti-forgery-token
-  []
-  (if-let [hidden-field (.getElementById js/document "__anti-forgery-token")]
-    (.-value hidden-field)))
-
-(def csrf-interceptor
-  (to-interceptor {:name "CSRF Interceptor"
-                   :request #(assoc-in % [:headers "X-CSRF-Token"] (get-anti-forgery-token))}))
-
-(swap! default-interceptors (partial cons csrf-interceptor))
-
-
-
 ;; Sente event/message handler
 ;;
 ;; Note that if you're only using Sente to make use of views.reagent in your app
@@ -182,19 +185,33 @@
 
 (defn sente-event-msg-handler
   [{:keys [event id client-id] :as ev}]
-  (let [[ev-id ev-data] event]
-    (cond
-      (and (= :chsk/state ev-id)
-           (:open? ev-data))
-      (vr/on-open! @sente-socket ev)
+  (cond
+    (vr/chsk-open-event? ev)
+    (vr/on-open! @sente-socket ev)
 
-      (= :chsk/recv id)
-      (when-not (vr/on-receive! @sente-socket ev)
-        ; on-receive! returns true if the event was a views.reagent event and it
-        ; handled it.
-        ;
-        ; you could put your code to handle your app's own events here
-        ))))
+    (= :chsk/recv id)
+    (when-not (vr/on-receive! @sente-socket ev)
+      ; on-receive! returns true if the event was a views.reagent event and it
+      ; handled it.
+      ;
+      ; you could put your code to handle your app's own events here
+      )))
+
+
+
+;; Utility functions for dealing with CSRF Token garbage in AJAX requests.
+
+(defn get-csrf-token
+  []
+  (when-let [csrf-token-element (.querySelector js/document "meta[name=\"csrf-token\"]")]
+    (.-content csrf-token-element)))
+
+(defn add-csrf-token-ajax-interceptor!
+  [csrf-token]
+  (let [interceptor (ajax/to-interceptor
+                      {:name    "CSRF Interceptor"
+                       :request #(assoc-in % [:headers "X-CSRF-Token"] csrf-token)})]
+    (swap! ajax/default-interceptors #(cons interceptor %))))
 
 
 
@@ -202,14 +219,19 @@
 
 (defn ^:export run
   []
-  ; Sente setup. create the socket, storing it in an atom and set up a event
-  ; handler using sente's own message router functionality.
-  (reset! sente-socket (sente/make-channel-socket! "/chsk" {}))
+  (enable-console-print!)
 
-  ; set up a handler for sente events
-  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+  (let [csrf-token (get-csrf-token)]
+    (if csrf-token (add-csrf-token-ajax-interceptor! csrf-token))
 
-  ; Configure views.reagent for use with Sente.
-  (vr/init! @sente-socket {})
+    ; Sente setup. create the socket, storing it in an atom and set up a event
+    ; handler using sente's own message router functionality.
+    (reset! sente-socket (sente/make-channel-socket! "/chsk" csrf-token {}))
 
-  (r/render-component [todo-app] (.getElementById js/document "app")))
+    ; set up a handler for sente events
+    (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+
+    ; Configure views.reagent for use with Sente.
+    (vr/init! @sente-socket {})
+
+    (rdom/render [todo-app] (.getElementById js/document "app"))))

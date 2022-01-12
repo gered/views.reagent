@@ -3,21 +3,18 @@
   (:require
     [compojure.core :refer [routes GET POST]]
     [compojure.route :as route]
+    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-    [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
     [taoensso.sente :as sente]
     [taoensso.sente.server-adapters.immutant :refer [sente-web-server-adapter]]
     [immutant.web :as immutant]
     [hiccup.page :refer [html5 include-css include-js]]
     [hiccup.element :refer [javascript-tag]]
-    [environ.core :refer [env]]
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
     [views.reagent.sente.server :as vr]))
-
-(def dev? (boolean (env :dev)))
 
 (def db {:classname   "org.postgresql.Driver"
          :subprotocol "postgresql"
@@ -133,11 +130,11 @@
   []
   (html5
     [:head
+     [:meta {:name "csrf-token" :content *anti-forgery-token*}]
      [:title "TodoMVC - views.reagent Example"]
      (include-css "todos.css" "todosanim.css")
      (include-js "cljs/app.js")]
     [:body
-     (anti-forgery-field)
      [:div#app [:h1 "This will become todomvc when the ClojureScript is compiled"]]
      (javascript-tag "todomvc.client.run();")]))
 
@@ -167,7 +164,7 @@
 
 (def handler
   (-> app-routes
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))))
+      (wrap-defaults site-defaults)))
 
 
 

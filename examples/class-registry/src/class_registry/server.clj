@@ -3,22 +3,19 @@
   (:require
     [compojure.core :refer [routes GET POST]]
     [compojure.route :as route]
+    [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
     [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
     [ring.middleware.format :refer [wrap-restful-format]]
-    [ring.util.anti-forgery :refer [anti-forgery-field]]
     [ring.util.response :refer [response]]
     [taoensso.sente :as sente]
     [taoensso.sente.server-adapters.immutant :refer [sente-web-server-adapter]]
     [immutant.web :as immutant]
     [hiccup.page :refer [html5 include-css include-js]]
     [hiccup.element :refer [javascript-tag]]
-    [environ.core :refer [env]]
     [clojure.java.jdbc :as jdbc]
     [views.sql.core :refer [vexec! with-view-transaction]]
     [views.sql.view :refer [view]]
     [views.reagent.sente.server :as vr]))
-
-(def dev? (boolean (env :dev)))
 
 (def db {:classname   "org.postgresql.Driver"
          :subprotocol "postgresql"
@@ -147,12 +144,12 @@
     [:head
      [:title "Class Registry - views.reagent Example"]
      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+     [:meta {:name "csrf-token" :content *anti-forgery-token*}]
      (include-css
        "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
        "app.css")
      (include-js "cljs/app.js")]
     [:body
-     (anti-forgery-field)
      [:div#app [:h1 "This will be replaced by the Class Registry app when the ClojureScript is compiled."]]
      (javascript-tag "class_registry.client.run();")]))
 
@@ -203,7 +200,7 @@
   (-> app-routes
       (wrap-restful-format :formats [:transit-json])
       (wrap-sente "/chsk")
-      (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] (not dev?)))))
+      (wrap-defaults site-defaults)))
 
 
 

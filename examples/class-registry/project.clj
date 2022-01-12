@@ -1,29 +1,28 @@
 (defproject class-registry "0.1.0-SNAPSHOT"
-  :dependencies  [[org.clojure/clojure "1.8.0"]
-                  [org.clojure/clojurescript "1.8.51"]
-                  [ring "1.4.0"]
-                  [ring/ring-defaults "0.2.0" :exclusions [javax.servlet/servlet-api]]
-                  [ring-middleware-format "0.7.0"]
-                  [compojure "1.4.0"]
-                  [org.immutant/web "2.1.4"]
+  :dependencies  [[org.clojure/clojure "1.10.3"]
+                  [org.clojure/clojurescript "1.10.773"]
+                  [ring "1.9.4"]
+                  [ring/ring-defaults "0.3.3" :exclusions [javax.servlet/servlet-api]]
+                  [ring-middleware-format "0.7.4"]
+                  [compojure "1.6.2"]
+                  [org.immutant/web "2.1.10"]
 
-                  [org.clojure/java.jdbc "0.6.1"]
-                  [org.postgresql/postgresql "9.4.1208.jre7"]
-                  [com.taoensso/sente "1.8.1"]
-                  [gered/views "1.5"]
-                  [gered/views.sql "0.1"]
-                  [gered/views.reagent "0.1"]
-                  [gered/views.reagent.sente "0.1"]
+                  [org.clojure/java.jdbc "0.7.12"]
+                  [org.postgresql/postgresql "42.3.1"]
+                  [com.taoensso/sente "1.16.2"]
+                  [net.gered/views "1.6-SNAPSHOT"]
+                  [net.gered/views.sql "0.2-SNAPSHOT"]
+                  [net.gered/views.reagent "0.2-SNAPSHOT"]
+                  [net.gered/views.reagent.sente "0.2-SNAPSHOT"]
 
                   [hiccup "1.0.5"]
-                  [reagent "0.6.0-alpha2"]
+                  [reagent "1.1.0"]
+                  [cljs-ajax "0.8.4"]
                   [cljsjs/bootstrap "3.3.6-1"]
-                  [cljs-ajax "0.5.4"]
+                  [cljsjs/react "17.0.2-0"]
+                  [cljsjs/react-dom "17.0.2-0"]]
 
-                  [environ "1.0.3"]]
-
-  :plugins       [[lein-cljsbuild "1.1.3"]
-                  [lein-environ "1.0.3"]]
+  :plugins       [[lein-cljsbuild "1.1.8"]]
 
   :main          class-registry.server
 
@@ -40,10 +39,9 @@
                                            :optimizations :none
                                            :pretty-print  true}}}}
 
-  :profiles      {:dev     {:env {:dev "true"}}
+  :profiles      {:dev     {}
 
-                  :uberjar {:env       {}
-                            :aot       :all
+                  :uberjar {:aot       :all
                             :hooks     [leiningen.cljsbuild]
                             :cljsbuild {:jar    true
                                         :builds {:main

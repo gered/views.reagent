@@ -2,7 +2,8 @@
   (:require
     [clojure.string :as string]
     [reagent.core :as r]
-    [ajax.core :refer [POST default-interceptors to-interceptor]]
+    [reagent.dom :as rdom]
+    [ajax.core :as ajax]
     [taoensso.sente :as sente]
     [views.reagent.client.component :refer [view-cursor] :refer-macros [defvc]]
     [views.reagent.sente.client :as vr]))
@@ -31,20 +32,20 @@
 
 ;; AJAX actions
 
-(defn add-person! [person]  (POST "/people/add" {:params {:person person}}))
-(defn save-person! [person] (POST "/people/update" {:params {:person person}}))
-(defn delete-person! [id]   (POST "/people/delete" {:params {:id id}}))
-(defn add-class! [class]    (POST "/class/add" {:params {:class class}}))
-(defn save-class! [class]   (POST "/class/update" {:params {:class class}}))
-(defn delete-class! [id]    (POST "/class/delete" {:params {:id id}}))
+(defn add-person! [person]  (ajax/POST "/people/add" {:params {:person person}}))
+(defn save-person! [person] (ajax/POST "/people/update" {:params {:person person}}))
+(defn delete-person! [id]   (ajax/POST "/people/delete" {:params {:id id}}))
+(defn add-class! [class]    (ajax/POST "/class/add" {:params {:class class}}))
+(defn save-class! [class]   (ajax/POST "/class/update" {:params {:class class}}))
+(defn delete-class! [id]    (ajax/POST "/class/delete" {:params {:id id}}))
 
 (defn add-registration!
   [class-id people-id]
-  (POST "/registry/add" {:params {:class-id class-id :people-id people-id}}))
+  (ajax/POST "/registry/add" {:params {:class-id class-id :people-id people-id}}))
 
 (defn remove-registration!
   [id]
-  (POST "/registry/remove" {:params {:id id}}))
+  (ajax/POST "/registry/remove" {:params {:id id}}))
 
 
 
@@ -363,35 +364,34 @@
 
 
 
-;; AJAX CSRF stuff
-
-(defn get-anti-forgery-token
-  []
-  (if-let [hidden-field (.getElementById js/document "__anti-forgery-token")]
-    (.-value hidden-field)))
-
-(def csrf-interceptor
-  (to-interceptor {:name "CSRF Interceptor"
-                   :request #(assoc-in % [:headers "X-CSRF-Token"] (get-anti-forgery-token))}))
-
-(swap! default-interceptors (partial cons csrf-interceptor))
-
-
-
 ;; Sente event/message handler
 
 (defn sente-event-msg-handler
   [{:keys [event id client-id] :as ev}]
-  (let [[ev-id ev-data] event]
-    (cond
-      (and (= :chsk/state ev-id)
-           (:open? ev-data))
-      (vr/on-open! @sente-socket ev)
+  (cond
+    (vr/chsk-open-event? ev)
+    (vr/on-open! @sente-socket ev)
 
-      (= :chsk/recv id)
-      (when-not (vr/on-receive! @sente-socket ev)
-        ; TODO: any code here needed to handle app-specific receive events
-        ))))
+    (= :chsk/recv id)
+    (when-not (vr/on-receive! @sente-socket ev)
+      ; TODO: any code here needed to handle app-specific receive events
+      )))
+
+
+
+;; Utility functions for dealing with CSRF Token garbage in AJAX requests.
+
+(defn get-csrf-token
+  []
+  (when-let [csrf-token-element (.querySelector js/document "meta[name=\"csrf-token\"]")]
+    (.-content csrf-token-element)))
+
+(defn add-csrf-token-ajax-interceptor!
+  [csrf-token]
+  (let [interceptor (ajax/to-interceptor
+                      {:name    "CSRF Interceptor"
+                       :request #(assoc-in % [:headers "X-CSRF-Token"] csrf-token)})]
+    (swap! ajax/default-interceptors #(cons interceptor %))))
 
 
 
@@ -399,9 +399,19 @@
 
 (defn ^:export run
   []
-  (reset! sente-socket (sente/make-channel-socket! "/chsk" {}))
-  (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+  (enable-console-print!)
 
-  (vr/init! @sente-socket {})
+  (let [csrf-token (get-csrf-token)]
+    (if csrf-token (add-csrf-token-ajax-interceptor! csrf-token))
 
-  (r/render-component [class-registry-app] (.getElementById js/document "app")))
+    ; Sente setup. create the socket, storing it in an atom and set up a event
+    ; handler using sente's own message router functionality.
+    (reset! sente-socket (sente/make-channel-socket! "/chsk" csrf-token {}))
+
+    ; set up a handler for sente events
+    (sente/start-chsk-router! (:ch-recv @sente-socket) sente-event-msg-handler)
+
+    ; Configure views.reagent for use with Sente.
+    (vr/init! @sente-socket {})
+
+    (rdom/render [class-registry-app] (.getElementById js/document "app"))))

@@ -28,8 +28,8 @@
         [args & body] decl]
     `(defn ~component-name ~attr-map []
        (reagent.core/create-class
-         {:component-will-mount
-          (fn [this#]
+         {:constructor
+          (fn [this# props#]
             (views.reagent.client.component/prepare-for-render! this#))
 
           :component-did-mount
@@ -43,14 +43,11 @@
           (fn [this#]
             (views.reagent.client.component/unsubscribe-all! this#))
 
-          :component-will-receive-props
-          (fn [this# new-argv#]
-            (views.reagent.client.component/prepare-for-render! this#))
-
           :component-did-update
           (fn [this# old-argv#]
             (views.reagent.client.component/update-subscriptions! this#))
 
-          :component-function
+          :reagent-render
           (fn ~args
+            (views.reagent.client.component/prepare-for-render! (reagent.core/current-component))
             ~@body)}))))

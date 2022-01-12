@@ -21,6 +21,15 @@
     (send-fn sente-chsk-map data))
   (reset! send-buffer []))
 
+(defn chsk-open-event?
+  "returns true if the sente event is for a channel-socket state change to 'open' or 'connected'."
+  [{:keys [event] :as ev}]
+  ; for :chsk/state events, sente sends the event data in the form [old-state new-state].
+  ; we only care about the new state for the purposes of performing this check ...
+  (let [[ev-id ev-data] event]
+    (and (= :chsk/state ev-id)
+         (:open? (second ev-data)))))
+
 (defn on-open!
   "should be called when a new Sente connection is established. ev is the event
    map provided by Sente where id = :chsk/state, and :open? = true. make sure
@@ -44,14 +53,12 @@
    application does not need to do any custom Sente event handling, then you can
    opt to use this event handler."
   [sente-chsk-map {:keys [event id client-id] :as ev}]
-  (let [[ev-id ev-data] event]
-    (cond
-      (and (= :chsk/state ev-id)
-           (:open? ev-data))
-      (on-open! sente-chsk-map ev)
+  (cond
+    (chsk-open-event? event)
+    (on-open! sente-chsk-map ev)
 
-      (= :chsk/recv id)
-      (on-receive! sente-chsk-map ev))))
+    (= :chsk/recv id)
+    (on-receive! sente-chsk-map ev)))
 
 (defn init!
   "performs initial configuration necessary to hook Sente into views.reagent as the

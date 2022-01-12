@@ -1,4 +1,4 @@
-(defproject net.gered/views.reagent.sente "0.2.0-SNAPSHOT"
+(defproject net.gered/views.reagent.sente "0.2.0"
   :description  "Sente client/server messaging adapter for views.reagent."
   :url          "https://github.com/gered/views.reagent"
   :license      {:name "MIT License"

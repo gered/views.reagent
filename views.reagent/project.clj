@@ -1,4 +1,4 @@
-(defproject net.gered/views.reagent "0.2.0-SNAPSHOT"
+(defproject net.gered/views.reagent "0.2.0"
   :description         "Reagent plugin for the views library, providing real-time component updates to server-side changes to data."
   :url                 "https://github.com/gered/views.reagent"
   :license             {:name "MIT License"

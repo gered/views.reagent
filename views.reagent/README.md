@@ -11,9 +11,8 @@ views.reagent.
 
 ## Leiningen
 
-```clj
-[gered/views.reagent "0.1"]
-```
+
+[![](https://clojars.org/net.gered/views.reagent/latest-version.svg)](https://clojars.org/net.gered/views.reagent)
 
 ## Usage
 
